@@ -1,0 +1,22 @@
+websites:
+  - name: "Example Store"
+    product_url: "https://www.example.com/product-page"
+    login_url: "https://www.example.com/login"
+    checkout_url: "https://www.example.com/checkout"
+    selectors:
+      login:
+        email: "input[name='email']"
+        password: "input[name='password']"
+        login_button: ".login-button"
+      stock: ".stock-status"
+      add_to_cart: ".add-to-cart-button"
+      checkout: ".checkout-button"
+      captcha: "iframe[src*='captcha']"
+      payment:
+        card_number: "input[name='cardNumber']"
+        expiry: "input[name='expiry']"
+        cvv: "input[name='cvv']"
+        submit_button: ".submit-payment"
+
+settings:
+  check_interval: 60
