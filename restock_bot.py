@@ -30,16 +30,17 @@ logging.basicConfig(filename="restock_bot.log", level=logging.INFO, format="%(as
 
 # Setup Chrome WebDriver
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")
+options.add_argument("--headless")  # Runs Chrome without UI
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
-options.add_argument("--disable-blink-features=AutomationControlled")
-options.add_argument("--disable-infobars")
-options.add_argument("--mute-audio")
-options.add_argument("--window-size=1920,1080")
+options.add_argument("--disable-blink-features=AutomationControlled")  # Anti-bot detection bypass
+options.add_argument("start-maximized")  # Ensures website loads properly
+options.add_experimental_option("excludeSwitches", ["enable-automation"])  # Hides automation flag
+options.add_experimental_option("useAutomationExtension", False)  # Disables automation extension
 
 driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Hides Selenium usage
 
 def login(store):
     """ Logs into the store securely. """
