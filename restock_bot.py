@@ -123,5 +123,8 @@ def main():
         print("Checking store: {store['name']}")  # Debugging line
         check_stock(store)
 
+if __name__ == "__main__":
+    main()
+
 driver.quit()
 logging.info("🛑 Browser closed.")
