@@ -10,7 +10,7 @@ websites:
         email: "input#username"
         password: "input#password"
         login_button: "button[data-test='login-button']"
-      stock: "div[data-test='availabilityMessage']"
+      stock: "span.h-margin-r-tight"
       price: "span[data-test='product-price']"
       add_to_cart: "button[data-test='orderPickupButton']"
       checkout: "a[data-test='checkoutButton']"
