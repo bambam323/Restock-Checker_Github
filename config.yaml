@@ -19,4 +19,4 @@ websites:
         submit_button: ".submit-payment"
 
 settings:
-  check_interval: 60
+  check_interval: 5
