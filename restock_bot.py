@@ -58,6 +58,7 @@ def login(store):
 def check_stock(store):
     """ Checks if the product is in stock for a given store. """
     logging.info("Checking stock for " + store["name"] + "...")
+    logging.info("Selector input: " + store["selectors"]["stock"])
     driver.get(store["product_url"])
 
     retries = 3
