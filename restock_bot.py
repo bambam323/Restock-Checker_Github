@@ -38,7 +38,7 @@ options.add_argument("start-maximized")  # Ensures website loads properly
 options.add_experimental_option("excludeSwitches", ["enable-automation"])  # Hides automation flag
 options.add_experimental_option("useAutomationExtension", False)  # Disables automation extension
 
-driver = webdriver.Chrome(service=Service("/usr/local/bin/chromedriver"), options=options)
+driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
 driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Hides Selenium usage
 
 def login(store):
