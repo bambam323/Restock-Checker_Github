@@ -120,7 +120,7 @@ def main():
     print("In Main..")
     print("Loaded config:", config)  # Debugging line
     for store in config.get("websites", []):  # Safely get store list
-        print("Checking store:" + {store['name']})  # Debugging line
+        #print("Checking store:" + {store['name']})  # Debugging line
         check_stock(store)
 
 if __name__ == "__main__":
