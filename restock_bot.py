@@ -118,11 +118,10 @@ def proceed_to_checkout(store):
 
 def main():
     print("In Main..")
-    for store in config["websites"]:  # Iterate over each store in config.yaml
+    print("Loaded config:", config)  # Debugging line
+    for store in config.get("websites", []):  # Safely get store list
+        print(f"Checking store: {store['name']}")  # Debugging line
         check_stock(store)
-
-if __name__ == "__main__":
-    main()
 
 driver.quit()
 logging.info("🛑 Browser closed.")
