@@ -125,10 +125,13 @@ def proceed_to_checkout(store):
     except Exception as e:
         logging.error("❌ Checkout failed for " + store["name"] + ": " + str(e))
 
+def main():
+    print("In Main..")
+    for store in config["websites"]:  # Iterate over each store in config.yaml
+        check_stock(store)
+
+if __name__ == "__main__":
+    main()
+
 driver.quit()
 logging.info("🛑 Browser closed.")
-
-
-finally:
-    driver.quit()  # Close browser
-    logging.info("🛑 Browser closed.")
