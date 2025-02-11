@@ -122,46 +122,12 @@ def proceed_to_checkout(store):
         # Submit Order
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]).click()
         logging.info("🎉 Order placed at " + store["name"] + "!")
-    
     except Exception as e:
         logging.error("❌ Checkout failed for " + store["name"] + ": " + str(e))
 
-def bypass_captcha(store):
-    """ Automatically solves CAPTCHA using an external service. """
-    logging.info("⚠️ CAPTCHA detected on " + store["name"] + ", solving...")
-
-    captcha_iframe = driver.find_element(By.CSS_SELECTOR, store["selectors"]["captcha"])
-    captcha_src = captcha_iframe.get_attribute("src")
-
-    api_key = config["settings"]["captcha_solver_api_key"]
-    response = requests.post(
-        "http://2captcha.com/in.php",
-        data={"key": api_key, "method": "userrecaptcha", "googlekey": captcha_src, "pageurl": store["checkout_url"]}
-    )
-    
-    captcha_id = response.text.split('|')[1]
-    time.sleep(10)  # Wait for solution
-
-    response = requests.get("http://2captcha.com/res.php?key=" + api_key + "&action=get&id=" + captcha_id)
-    captcha_solution = response.text.split('|')[1]
-
-    driver.execute_script("document.getElementById('g-recaptcha-response').innerHTML = '" + captcha_solution + "';")
-    logging.info("✅ CAPTCHA bypassed on " + store["name"] + "!")
-
-# Run the bot for each store using multi-threading
-threads = []
-for store in config["websites"]:
-    thread = Thread(target=check_stock, args=(store,))
-    thread.start()
-    threads.append(thread)
-
-# Wait for all threads to finish
-for thread in threads:
-    thread.join()
-
-# Close browser after execution
 driver.quit()
 logging.info("🛑 Browser closed.")
+
 
 finally:
     driver.quit()  # Close browser
