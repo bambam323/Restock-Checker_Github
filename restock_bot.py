@@ -11,7 +11,6 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from webdriver_manager.chrome import ChromeDriverManager
 
 # Load environment variables (Login & Payment Info)
 load_dotenv()
@@ -39,7 +38,7 @@ options.add_argument("start-maximized")  # Ensures website loads properly
 options.add_experimental_option("excludeSwitches", ["enable-automation"])  # Hides automation flag
 options.add_experimental_option("useAutomationExtension", False)  # Disables automation extension
 
-driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+driver = webdriver.Chrome(service=Service("/usr/local/bin/chromedriver"), options=options)
 driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Hides Selenium usage
 
 def login(store):
@@ -80,8 +79,6 @@ def check_stock(store):
         except Exception as e:
             logging.error("⚠️ Stock check failed for " + store["name"] + " on attempt " + str(attempt + 1) + ": " + traceback.format_exc())
 
-    logging.error("❌ Giving up on " + store["name"] + " after " + str(retries) + " failed attempts.")
-
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
     logging.info("🛒 Adding item to cart at " + store["name"] + "...")
@@ -92,7 +89,6 @@ def add_to_cart(store):
         )
         add_button.click()
         logging.info("✅ Item added to cart at " + store["name"] + "!")
-
         proceed_to_checkout(store)
     except Exception as e:
         logging.error("❌ Failed to add item to cart at " + store["name"] + ": " + str(e))
@@ -107,15 +103,10 @@ def proceed_to_checkout(store):
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
         ).click()
 
-        # Handling CAPTCHA
-        if store["selectors"].get("captcha"):
-            bypass_captcha(store)
-
         # Enter Payment Details
         WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
         ).send_keys(CARD_NUMBER)
-
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
 
