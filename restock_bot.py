@@ -15,7 +15,7 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 
 # Disable warnings & increase connection pool size
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-RemoteConnection.set_timeout(30)  # Increase timeout to prevent connection issues
+RemoteConnection.set_timeout(60)  # Increase timeout to prevent connection issues
 
 # Load environment variables (Login & Payment Info)
 load_dotenv()
@@ -64,24 +64,33 @@ def check_for_captcha():
             site_key = "your_target_site_key_here"  # Extract from HTML source
             page_url = driver.current_url
 
+            # Request CAPTCHA solution from 2Captcha
             captcha_id = requests.post(
                 f"http://2captcha.com/in.php?key={API_KEY}&method=userrecaptcha&googlekey={site_key}&pageurl={page_url}&json=1"
             ).json().get("request")
 
             logging.info("Waiting for CAPTCHA solution...")
-            time.sleep(10)  # Reduce wait time from 15 to 10 seconds
+            time.sleep(10)  # Reduce wait time for faster solving
 
+            # Retrieve solution
             captcha_solution = requests.get(
                 f"http://2captcha.com/res.php?key={API_KEY}&action=get&id={captcha_id}&json=1"
             ).json().get("request")
 
             if captcha_solution:
                 logging.info("CAPTCHA solved successfully!")
-                driver.execute_script(
-                    f"document.getElementById('g-recaptcha-response').innerHTML = '{captcha_solution}';"
+
+                # Wait for the CAPTCHA response field to appear
+                WebDriverWait(driver, 5).until(
+                    EC.presence_of_element_located((By.CSS_SELECTOR, "textarea#g-recaptcha-response"))
                 )
 
-                # Check if a verify button needs to be clicked
+                # Inject the CAPTCHA solution
+                driver.execute_script(
+                    "document.querySelector('textarea#g-recaptcha-response').innerHTML = '{}';".format(captcha_solution)
+                )
+
+                # Click verify or submit button if necessary
                 try:
                     verify_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
                     verify_button.click()
@@ -109,17 +118,21 @@ def check_stock(store):
 
             logging.info("Checking 'Add to Cart' button...")
             add_to_cart_button = WebDriverWait(driver, 2).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
+                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
-            logging.info("{} is IN STOCK! Proceeding to checkout...".format(store["name"]))
-            add_to_cart(store)
-            return  # Stop checking once item is in stock
+            # Wait for the button to become enabled
+            if "disabled" not in add_to_cart_button.get_attribute("class"):
+                logging.info("{} is IN STOCK! Proceeding to checkout...".format(store["name"]))
+                add_to_cart(store)
+                return  # Stop checking once item is in stock
+            else:
+                logging.info("{} is OUT OF STOCK. Retrying in 1 second...".format(store["name"]))
 
-        except Exception:
-            logging.info("{} is still out of stock. Retrying in 2 seconds...".format(store["name"]))
-        
-        time.sleep(2)  # Keep checking every 2 seconds
+        except Exception as e:
+            logging.error("Stock check failed for {}: {}".format(store["name"], str(e)))
+
+        time.sleep(1)  # Faster retry interval
 
 
 
@@ -182,10 +195,10 @@ def main():
     """Runs stock checks with a controlled number of threads."""
     logging.info("Starting Restock Bot...")
     while True:
-        with ThreadPoolExecutor(max_workers=min(3, len(config["websites"]))) as executor:
+        with ThreadPoolExecutor(max_workers=2) as executor:  # Reduced parallel threads
             executor.map(check_stock, config["websites"])
-        logging.info("Sleeping for 3 seconds before checking again...")
-        time.sleep(3)
+        logging.info("Sleeping for 2 seconds before checking again...")
+        time.sleep(2)
 
 
 if __name__ == "__main__":
