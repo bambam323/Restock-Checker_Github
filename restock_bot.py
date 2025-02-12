@@ -45,11 +45,11 @@ def login(store):
     logging.info("Logging into " + store["name"] + "...")
     driver.get(store["login_url"])
     try:
-        WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["login"]["email"])))
+        WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["login"]["email"])))
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["login"]["email"]).send_keys(EMAIL)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["login"]["password"]).send_keys(PASSWORD)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["login"]["login_button"]).click()
-        WebDriverWait(driver, 3).until(EC.url_changes(store["login_url"]))
+        WebDriverWait(driver, 5).until(EC.url_changes(store["login_url"]))
         logging.info("✅ Login successful for " + store["name"] + "!")
     except Exception as e:
         logging.error("❌ Login failed for " + store["name"] + ": " + str(e))
@@ -60,10 +60,10 @@ def check_stock(store):
     
     while True:  # Runs forever until the item is in stock
         try:
-            logging.info("Checking if 'Add to Cart' button is enabled... Using selector: {}".format(store["selectors"]["add_to_cart"]))
+            logging.info("Checking if 'Add to Cart' button is enabled...")
 
             # Wait for the "Add to Cart" button to load
-            add_to_cart_button = WebDriverWait(driver, 5).until(
+            add_to_cart_button = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
@@ -77,21 +77,22 @@ def check_stock(store):
             else:
                 logging.info("🚀 {} is IN STOCK! Proceeding to checkout...".format(store["name"]))
                 add_to_cart(store)
-                return  # Stop checking once we start checkout
+                return  # Stop checking after successful stock detection
 
         except Exception as e:
-            logging.error("⚠️ Stock check failed for {}: {}".format(store["name"], traceback.format_exc()))
+            logging.error("⚠️ Stock check failed for {} on attempt {}: {}".format(store["name"], attempt + 1, traceback.format_exc()))
 
         # Wait before checking again to avoid getting blocked
-        logging.info("🔄 {} is still out of stock. Checking again in 3 seconds...".format(store["name"]))
-        time.sleep(3)
+        logging.info("🔄 {} is still out of stock. Checking again in 5 seconds...".format(store["name"]))
+        time.sleep(5)  # Wait before retrying
+
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
     logging.info("🛒 Adding item to cart at {}...".format(store["name"]))
 
     try:
-        add_button = WebDriverWait(driver, 2).until(
+        add_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         )
         add_button.click()
@@ -102,41 +103,53 @@ def add_to_cart(store):
         logging.error("❌ Failed to add item to cart at {}: {}".format(store["name"], e))
 
 def proceed_to_checkout(store):
-    """ Completes checkout process including login, payment, and final order placement FAST! """
+    """ Completes checkout process including login, payment, and final order placement """
     logging.info("💳 Proceeding to checkout at {}...".format(store["name"]))
 
     try:
-        WebDriverWait(driver, 2).until(
+        # Step 1: Click "View Cart and Checkout"
+        WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["view_cart"]))
         ).click()
         logging.info("🛒 Clicked 'View Cart and Checkout'...")
 
-        WebDriverWait(driver, 2).until(
+        # Step 2: Click final "Checkout" button
+        WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
         ).click()
         logging.info("🛍️ Clicked final 'Checkout' button...")
 
-        password_field = WebDriverWait(driver, 2).until(
+        # Step 3: Handle Extra Login Step (Enter Password)
+        logging.info("🔐 Checking for additional sign-in prompt...")
+        time.sleep(2)  # Give time for login form to load
+
+        password_field = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["checkout_password"]))
         )
         password_field.send_keys(PASSWORD)
         logging.info("🔑 Entered password...")
 
-        sign_in_button = WebDriverWait(driver, 1).until(
+        sign_in_button = WebDriverWait(driver, 3).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout_sign_in_button"]))
         )
         sign_in_button.click()
         logging.info("✅ Clicked 'Sign in with password' button...")
 
-        WebDriverWait(driver, 1).until(
+        # Step 4: Enter Payment Details
+        WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
         ).send_keys(CARD_NUMBER)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
 
-        WebDriverWait(driver, 2).until(
+        # Step 5: Click "Place Your Order" button
+        logging.info("🛒 Clicking 'Place Your Order' button...")
+
+        place_order_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
-        ).click()
+        )
+        place_order_button.click()
+
         logging.info("🎉 Order placed at {}!".format(store["name"]))
 
     except Exception as e:
