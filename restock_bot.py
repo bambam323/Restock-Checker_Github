@@ -7,7 +7,6 @@ import traceback
 from threading import Thread
 from dotenv import load_dotenv
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
@@ -63,16 +62,20 @@ def check_stock(store):
     retries = 3
     for attempt in range(retries):
         try:
-            logging.info("Checking if 'Add to Cart' button is enabled...")
+            logging.info("Checking if 'Add to Cart' button is present...")
 
-            # Wait for the "Add to Cart" button to appear
+            # Wait for the "Add to Cart" button to load
             add_to_cart_button = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
-            # Check if the "disabled" attribute exists
-            if add_to_cart_button.get_attribute("disabled"):
-                logging.info("⏳ {} is still OUT OF STOCK.".format(store["name"]))
+            logging.info("✅ 'Add to Cart' button found.")
+
+            # Check if the button is disabled
+            is_disabled = add_to_cart_button.get_attribute("disabled")
+
+            if is_disabled:
+                logging.info("⏳ {} is OUT OF STOCK (Button is disabled).".format(store["name"]))
             else:
                 logging.info("🚀 {} is IN STOCK! Proceeding to checkout...".format(store["name"]))
                 add_to_cart(store)
