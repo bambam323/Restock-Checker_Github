@@ -42,7 +42,7 @@ driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () =>
 
 def login(store):
     """ Logs into the store securely. """
-    logging.info("Logging into " + store["name"] + "...")
+    logging.info("🔑 Logging into {}...".format(store["name"]))
     driver.get(store["login_url"])
     try:
         WebDriverWait(driver, 5).until(EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["login"]["email"])))
@@ -50,50 +50,48 @@ def login(store):
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["login"]["password"]).send_keys(PASSWORD)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["login"]["login_button"]).click()
         WebDriverWait(driver, 3).until(EC.url_changes(store["login_url"]))
-        logging.info("✅ Login successful for " + store["name"] + "!")
+        logging.info("✅ Login successful for {}!".format(store["name"]))
     except Exception as e:
-        logging.error("❌ Login failed for " + store["name"] + ": " + str(e))
+        logging.error("❌ Login failed for {}: {}".format(store["name"], e))
 
 def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is disabled. """
     logging.info("🔍 Starting stock check for {}...".format(store["name"]))
-    
+
     while True:  # Runs forever until the item is in stock
         try:
             logging.info("🔄 Checking stock for {}...".format(store["name"]))
-            driver.get(store["product_url"])  # Reload page every time
-            
-            add_to_cart_selector = store["selectors"]["add_to_cart"]
-            logging.info("Using selector: {}".format(add_to_cart_selector))
 
-            # Wait for the "Add to Cart" button
-            add_to_cart_button = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, add_to_cart_selector))
+            # Wait for the "Add to Cart" button to load
+            add_to_cart_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
+
+            logging.info("✅ 'Add to Cart' button found for {}.".format(store["name"]))
 
             # Check if the button is disabled
             is_disabled = add_to_cart_button.get_attribute("disabled")
 
             if is_disabled:
-                logging.info("⏳ {} is OUT OF STOCK.".format(store["name"]))
+                logging.info("⏳ {} is OUT OF STOCK (Button is disabled).".format(store["name"]))
             else:
                 logging.info("🚀 {} is IN STOCK! Proceeding to checkout...".format(store["name"]))
                 add_to_cart(store)
-                return  
+                return  # Stop checking after successful stock detection
 
         except Exception as e:
             logging.error("⚠️ Stock check failed for {}: {}".format(store["name"], traceback.format_exc()))
-            logging.info("🔄 Refreshing page and retrying...")
-            driver.refresh()  # Refresh and retry
-        
-        time.sleep(5)  # Retry in 5 seconds
+
+        # Wait before checking again to avoid getting blocked
+        logging.info("🔄 {} is still out of stock. Checking again in 5 seconds...".format(store["name"]))
+        time.sleep(5)  # Wait before retrying
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
     logging.info("🛒 Adding item to cart at {}...".format(store["name"]))
 
     try:
-        add_button = WebDriverWait(driver, 2).until(
+        add_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         )
         add_button.click()
@@ -157,7 +155,6 @@ def proceed_to_checkout(store):
 
     except Exception as e:
         logging.error("❌ Checkout failed for {}: {}".format(store["name"], e))
-
 
 def main():
     print("🚀 Bot is running... Press CTRL+C to stop.")
