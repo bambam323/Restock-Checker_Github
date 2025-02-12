@@ -170,7 +170,7 @@ def main():
     """Runs stock checks with controlled threading."""
     logging.info("Starting Restock Bot...")
     while True:
-        with ThreadPoolExecutor(max_workers=1) as executor:  # Reduce parallel checks
+        with ThreadPoolExecutor(max_workers=1) as executor:  # Reduces parallel checks
             executor.map(check_stock, config["websites"])
         logging.info("Sleeping for 2 seconds before checking again...")
         time.sleep(2)
