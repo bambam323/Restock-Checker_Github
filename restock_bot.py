@@ -60,7 +60,7 @@ def check_stock(store):
     
     while True:  # Runs forever until the item is in stock
         try:
-            logging.info("Checking if 'Add to Cart' button is enabled...")
+            logging.info("Checking if 'Add to Cart' button is enabled... Using selector: {}".format(store["selectors"]["add_to_cart"]))
 
             # Wait for the "Add to Cart" button to load
             add_to_cart_button = WebDriverWait(driver, 5).until(
