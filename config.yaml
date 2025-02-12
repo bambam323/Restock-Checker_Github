@@ -1,5 +1,5 @@
 websites:
-   - name: "Target"
+  - name: "Target"
     product_url: "https://www.target.com/p/pok--233-mon-trading-card-game--scarlet---38--violet--8212-prismatic-evolutions-surprise-box--no-aasa/-/A-94336414"
     login_url: "https://www.target.com/account/sign-in"
     checkout_url: "https://www.target.com/co-review"
@@ -12,11 +12,11 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor94336414"
-      view_cart: "div.styles_contentWrapper__p20AZ a"  # Clicks "View Cart and Checkout"
-      checkout: "button[data-test='checkoutButton']"   # Clicks "Checkout"
-      checkout_password: "input[data-test='login-password']"  # Password field after checkout button
-      checkout_sign_in_button: "button#login"  # Sign in with password button
+      add_to_cart: "button#addToCartButtonOrTextIdFor94336414"  # ✅ Corrected!
+      view_cart: "div.styles_contentWrapper__p20AZ a"
+      checkout: "button[data-test='checkoutButton']"
+      checkout_password: "input[data-test='login-password']"
+      checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
       payment:
         card_number: "input[name='cardNumber']"
@@ -37,11 +37,11 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor91670548"
-      view_cart: "div.styles_contentWrapper__p20AZ a"  # Clicks "View Cart and Checkout"
-      checkout: "button[data-test='checkoutButton']"   # Clicks "Checkout"
-      checkout_password: "input[data-test='login-password']"  # Password field after checkout button
-      checkout_sign_in_button: "button#login"  # Sign in with password button
+      add_to_cart: "button#addToCartButtonOrTextIdFor93954435"  # ✅ Fixed!
+      view_cart: "div.styles_contentWrapper__p20AZ a"
+      checkout: "button[data-test='checkoutButton']"
+      checkout_password: "input[data-test='login-password']"
+      checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
       payment:
         card_number: "input[name='cardNumber']"
@@ -63,10 +63,10 @@ websites:
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
       add_to_cart: "button#addToCartButtonOrTextIdFor88897904"
-      view_cart: "div.styles_contentWrapper__p20AZ a"  # Clicks "View Cart and Checkout"
-      checkout: "button[data-test='checkoutButton']"   # Clicks "Checkout"
-      checkout_password: "input[data-test='login-password']"  # Password field after checkout button
-      checkout_sign_in_button: "button#login"  # Sign in with password button
+      view_cart: "div.styles_contentWrapper__p20AZ a"
+      checkout: "button[data-test='checkoutButton']"
+      checkout_password: "input[data-test='login-password']"
+      checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
       payment:
         card_number: "input[name='cardNumber']"
