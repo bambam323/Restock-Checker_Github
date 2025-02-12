@@ -58,11 +58,15 @@ def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is disabled. """
     logging.info("🔍 Starting continuous stock check for {}...".format(store["name"]))
     
-    while True:  # Runs forever until the item is in stock
+    while True:  # Runs indefinitely
         try:
             logging.info("Checking if 'Add to Cart' button is enabled... Using selector: {}".format(store["selectors"]["add_to_cart"]))
 
-            # Wait for the "Add to Cart" button to load
+            # Load product page
+            driver.get(store["product_url"])
+            time.sleep(1)  # Small delay to allow elements to load
+
+            # Wait for the "Add to Cart" button
             add_to_cart_button = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
