@@ -12,8 +12,8 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor94336414"
-      view_cart: "div.styles_contentWrapper__p20AZ a"
+      add_to_cart: "button[data-test*='addToCart']"  # Generic selector for add to cart
+      view_cart: "a[href='/cart']"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
       checkout_sign_in_button: "button#login"
@@ -37,33 +37,8 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor93954435"
-      view_cart: "div.styles_contentWrapper__p20AZ a"
-      checkout: "button[data-test='checkoutButton']"
-      checkout_password: "input[data-test='login-password']"
-      checkout_sign_in_button: "button#login"
-      captcha: "iframe[src*='captcha']"
-      payment:
-        card_number: "input[name='cardNumber']"
-        expiry: "input[name='expiry']"
-        cvv: "input[name='cvv']"
-        submit_button: "button[data-test='placeOrderButton']"
-
-  - name: "Target - Scarlet & Violet S3.5 Booster Bundle Box"
-    product_url: "https://www.target.com/p/pokemon-scarlet-violet-s3-5-booster-bundle-box/-/A-88897904"
-    login_url: "https://www.target.com/account/sign-in"
-    checkout_url: "https://www.target.com/co-review"
-    max_price: 28
-    quantity: 1
-    selectors:
-      login:
-        email: "input#username"
-        password: "input#password"
-        login_button: "button[data-test='login-button']"
-      stock: "div.h-margin-t-default span span"
-      price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor88897904"
-      view_cart: "div.styles_contentWrapper__p20AZ a"
+      add_to_cart: "button[data-test*='addToCart']"  
+      view_cart: "a[href='/cart']"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
       checkout_sign_in_button: "button#login"
