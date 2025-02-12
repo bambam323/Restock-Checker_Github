@@ -56,29 +56,33 @@ def login(store):
         logging.error("❌ Login failed for " + store["name"] + ": " + str(e))
 
 def check_stock(store):
-    """ Checks if the product is in stock for a given store. """
+    """ Checks if the product is in stock by checking if Add to Cart is disabled. """
     logging.info("Checking stock for {}...".format(store["name"]))
     driver.get(store["product_url"])
 
     retries = 3
     for attempt in range(retries):
         try:
-            stock_element = WebDriverWait(driver, 5).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["stock"]))
-            )
-            stock_text = stock_element.text.lower()
+            logging.info("Checking if 'Add to Cart' button is enabled...")
 
-            if "in stock" in stock_text:
-                logging.info("🚀 {} item is in stock! Proceeding to checkout...".format(store["name"]))
-                add_to_cart(store)
-                return
+            # Wait for the "Add to Cart" button to appear
+            add_to_cart_button = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
+            )
+
+            # Check if the "disabled" attribute exists
+            if add_to_cart_button.get_attribute("disabled"):
+                logging.info("⏳ {} is still OUT OF STOCK.".format(store["name"]))
             else:
-                logging.info("⏳ {} is still out of stock...".format(store["name"]))
+                logging.info("🚀 {} is IN STOCK! Proceeding to checkout...".format(store["name"]))
+                add_to_cart(store)
+                return  # Stop checking after successful stock detection
 
         except Exception as e:
             logging.error("⚠️ Stock check failed for {} on attempt {}: {}".format(store["name"], attempt + 1, traceback.format_exc()))
 
     logging.error("❌ Giving up on {} after {} failed attempts.".format(store["name"], retries))
+
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
