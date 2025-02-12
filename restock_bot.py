@@ -15,7 +15,7 @@ from selenium.webdriver.remote.remote_connection import RemoteConnection
 
 # Disable warnings & increase connection pool size
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-RemoteConnection.set_timeout(60)  # Increase timeout to prevent connection issues
+RemoteConnection.set_timeout(120)  # Increase timeout to prevent connection pool issues
 
 # Load environment variables (Login & Payment Info)
 load_dotenv()
@@ -24,7 +24,7 @@ PASSWORD = os.getenv("PASSWORD")
 CARD_NUMBER = os.getenv("CARD_NUMBER")
 EXPIRY_DATE = os.getenv("EXPIRY_DATE")
 CVV = os.getenv("CVV")
-API_KEY = "your_2captcha_api_key"  # Replace with your 2Captcha API key if using reCAPTCHA
+API_KEY = os.getenv("CAPTCHA_API_KEY")  # 2Captcha API key
 
 # Mask sensitive data for logging
 masked_email = EMAIL[:2] + "****@****.com"
@@ -40,7 +40,7 @@ except Exception as e:
 # Configure logging
 logging.basicConfig(filename="restock_bot.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
-# Setup Chrome WebDriver
+# Setup Chrome WebDriver (Works with Older Selenium)
 options = webdriver.ChromeOptions()
 options.add_argument("--headless")
 options.add_argument("--disable-gpu")
@@ -66,7 +66,8 @@ def check_for_captcha():
 
             # Request CAPTCHA solution from 2Captcha
             captcha_id = requests.post(
-                f"http://2captcha.com/in.php?key={API_KEY}&method=userrecaptcha&googlekey={site_key}&pageurl={page_url}&json=1"
+                "http://2captcha.com/in.php?key=" + API_KEY + "&method=userrecaptcha&googlekey=" +
+                site_key + "&pageurl=" + page_url + "&json=1"
             ).json().get("request")
 
             logging.info("Waiting for CAPTCHA solution...")
@@ -74,21 +75,24 @@ def check_for_captcha():
 
             # Retrieve solution
             captcha_solution = requests.get(
-                f"http://2captcha.com/res.php?key={API_KEY}&action=get&id={captcha_id}&json=1"
+                "http://2captcha.com/res.php?key=" + API_KEY + "&action=get&id=" + str(captcha_id) + "&json=1"
             ).json().get("request")
 
             if captcha_solution:
                 logging.info("CAPTCHA solved successfully!")
 
-                # Wait for the CAPTCHA response field to appear
+                # Ensure the CAPTCHA response field exists before setting the value
                 WebDriverWait(driver, 5).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR, "textarea#g-recaptcha-response"))
                 )
 
                 # Inject the CAPTCHA solution
                 driver.execute_script(
-                    "document.querySelector('textarea#g-recaptcha-response').innerHTML = '{}';".format(captcha_solution)
+                    "document.querySelector('textarea#g-recaptcha-response').innerHTML = '" + captcha_solution + "';"
                 )
+
+                # Manually trigger CAPTCHA verification
+                driver.execute_script("document.querySelector('.g-recaptcha').dispatchEvent(new Event('change'))")
 
                 # Click verify or submit button if necessary
                 try:
@@ -103,13 +107,12 @@ def check_for_captcha():
                 logging.error("Failed to solve CAPTCHA.")
                 return False
     except Exception as e:
-        logging.error("Error solving CAPTCHA: {}".format(str(e)))
-
+        logging.error("Error solving CAPTCHA: " + str(e))
 
 
 def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is enabled. """
-    logging.info("Checking stock for {}...".format(store["name"]))
+    logging.info("Checking stock for " + store["name"] + "...")
     driver.get(store["product_url"])
 
     while True:
@@ -117,42 +120,42 @@ def check_stock(store):
             check_for_captcha()
 
             logging.info("Checking 'Add to Cart' button...")
-            add_to_cart_button = WebDriverWait(driver, 2).until(
+            WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
-            # Wait for the button to become enabled
+            add_to_cart_button = driver.find_element(By.CSS_SELECTOR, store["selectors"]["add_to_cart"])
+
             if "disabled" not in add_to_cart_button.get_attribute("class"):
-                logging.info("{} is IN STOCK! Proceeding to checkout...".format(store["name"]))
+                logging.info(store["name"] + " is IN STOCK! Proceeding to checkout...")
                 add_to_cart(store)
                 return  # Stop checking once item is in stock
             else:
-                logging.info("{} is OUT OF STOCK. Retrying in 1 second...".format(store["name"]))
+                logging.info(store["name"] + " is OUT OF STOCK. Retrying in 2 seconds...")
 
         except Exception as e:
-            logging.error("Stock check failed for {}: {}".format(store["name"], str(e)))
+            logging.error("Stock check failed for " + store["name"] + ": " + str(e))
 
-        time.sleep(1)  # Faster retry interval
-
+        time.sleep(2)
 
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
-    logging.info("Adding item to cart at {}...".format(store["name"]))
+    logging.info("Adding item to cart at " + store["name"] + "...")
     try:
         check_for_captcha()
-        WebDriverWait(driver, 2).until(
+        WebDriverWait(driver, 1).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         ).click()
-        logging.info("Item added to cart at {}!".format(store["name"]))
+        logging.info("Item added to cart at " + store["name"] + "!")
         proceed_to_checkout(store)
     except Exception as e:
-        logging.error("Failed to add item to cart at {}: {}".format(store["name"], str(e)))
+        logging.error("Failed to add item to cart at " + store["name"] + ": " + str(e))
 
 
 def proceed_to_checkout(store):
     """ Completes checkout process. """
-    logging.info("Proceeding to checkout at {}...".format(store["name"]))
+    logging.info("Proceeding to checkout at " + store["name"] + "...")
     try:
         check_for_captcha()
         WebDriverWait(driver, 2).until(
@@ -162,40 +165,26 @@ def proceed_to_checkout(store):
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
         ).click()
 
-        # If login is required at checkout, re-enter credentials
-        try:
-            password_field = WebDriverWait(driver, 1).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["checkout_password"]))
-            )
-            password_field.send_keys(PASSWORD)
-
-            WebDriverWait(driver, 1).until(
-                EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout_sign_in_button"]))
-            ).click()
-            logging.info("Re-logged into checkout page.")
-        except Exception:
-            logging.info("No login required at checkout.")
-
         WebDriverWait(driver, 1).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
         ).send_keys(CARD_NUMBER)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
-        
+
         WebDriverWait(driver, 2).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
         ).click()
-        
-        logging.info("Order placed at {}!".format(store["name"]))
+
+        logging.info("Order placed at " + store["name"] + "!")
     except Exception as e:
-        logging.error("Checkout failed for {}: {}".format(store["name"], str(e)))
+        logging.error("Checkout failed for " + store["name"] + ": " + str(e))
 
 
 def main():
-    """Runs stock checks with a controlled number of threads."""
+    """Runs stock checks with controlled threading."""
     logging.info("Starting Restock Bot...")
     while True:
-        with ThreadPoolExecutor(max_workers=2) as executor:  # Reduced parallel threads
+        with ThreadPoolExecutor(max_workers=1) as executor:  # Reduce parallel checks
             executor.map(check_stock, config["websites"])
         logging.info("Sleeping for 2 seconds before checking again...")
         time.sleep(2)
