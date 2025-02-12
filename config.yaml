@@ -11,11 +11,11 @@ websites:
         password: "input#password"
         login_button: "button[data-test='login-button']"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[id^='addToCartButtonOrTextIdFor'], button[data-test='shippingButton'], button[data-test='orderPickupButton']"
-      view_cart: "div.styles_contentWrapper__p20AZ a"
-      checkout: "button[data-test='checkoutButton']"
-      checkout_password: "input[data-test='login-password']"
-      checkout_sign_in_button: "button#login"
+      add_to_cart: "button#addToCartButtonOrTextIdFor94336414"
+      view_cart: "div.styles_contentWrapper__p20AZ a"  # Clicks "View Cart and Checkout"
+      checkout: "button[data-test='checkoutButton']"   # Clicks "Checkout"
+      checkout_password: "input[data-test='login-password']"  # Password field after checkout button
+      checkout_sign_in_button: "button#login"  # Sign in with password button
       captcha: "iframe[src*='captcha']"
       payment:
         card_number: "input[name='cardNumber']"
@@ -35,11 +35,11 @@ websites:
         password: "input#password"
         login_button: "button[data-test='login-button']"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[id^='addToCartButtonOrTextIdFor'], button[data-test='shippingButton'], button[data-test='orderPickupButton']"
-      view_cart: "div.styles_contentWrapper__p20AZ a"
-      checkout: "button[data-test='checkoutButton']"
-      checkout_password: "input[data-test='login-password']"
-      checkout_sign_in_button: "button#login"
+      add_to_cart: "button#addToCartButtonOrTextIdFor93954435"
+      view_cart: "div.styles_contentWrapper__p20AZ a"  # Clicks "View Cart and Checkout"
+      checkout: "button[data-test='checkoutButton']"   # Clicks "Checkout"
+      checkout_password: "input[data-test='login-password']"  # Password field after checkout button
+      checkout_sign_in_button: "button#login"  # Sign in with password button
       captcha: "iframe[src*='captcha']"
       payment:
         card_number: "input[name='cardNumber']"
@@ -59,15 +59,14 @@ websites:
         password: "input#password"
         login_button: "button[data-test='login-button']"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[id^='addToCartButtonOrTextIdFor'], button[data-test='shippingButton'], button[data-test='orderPickupButton']"
-      view_cart: "div.styles_contentWrapper__p20AZ a"
-      checkout: "button[data-test='checkoutButton']"
-      checkout_password: "input[data-test='login-password']"
-      checkout_sign_in_button: "button#login"
+      add_to_cart: "button#addToCartButtonOrTextIdFor88897904"
+      view_cart: "div.styles_contentWrapper__p20AZ a"  # Clicks "View Cart and Checkout"
+      checkout: "button[data-test='checkoutButton']"   # Clicks "Checkout"
+      checkout_password: "input[data-test='login-password']"  # Password field after checkout button
+      checkout_sign_in_button: "button#login"  # Sign in with password button
       captcha: "iframe[src*='captcha']"
       payment:
         card_number: "input[name='cardNumber']"
         expiry: "input[name='expiry']"
         cvv: "input[name='cvv']"
         submit_button: "button[data-test='placeOrderButton']"
-        
