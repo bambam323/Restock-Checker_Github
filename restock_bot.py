@@ -103,49 +103,51 @@ def add_to_cart(store):
         logging.error("❌ Failed to add item to cart at {}: {}".format(store["name"], e))
 
 def proceed_to_checkout(store):
-    """ Completes checkout process including login, payment, and final order placement """
+    """ Completes checkout process including login, payment, and final order placement FAST! """
     logging.info("💳 Proceeding to checkout at {}...".format(store["name"]))
 
     try:
-        # Step 1: Click "View Cart and Checkout"
-        WebDriverWait(driver, 5).until(
+        # Step 1: Click "View Cart and Checkout" FAST
+        logging.info("🛒 Clicking 'View Cart and Checkout'...")
+        view_cart_button = WebDriverWait(driver, 2).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["view_cart"]))
-        ).click()
-        logging.info("🛒 Clicked 'View Cart and Checkout'...")
+        )
+        view_cart_button.click()
 
-        # Step 2: Click final "Checkout" button
-        WebDriverWait(driver, 5).until(
+        # Step 2: Click final "Checkout" button FAST
+        logging.info("🛍️ Clicking final 'Checkout' button...")
+        checkout_button = WebDriverWait(driver, 2).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
-        ).click()
-        logging.info("🛍️ Clicked final 'Checkout' button...")
+        )
+        checkout_button.click()
 
         # Step 3: Handle Extra Login Step (Enter Password)
         logging.info("🔐 Checking for additional sign-in prompt...")
-        time.sleep(2)  # Give time for login form to load
 
-        password_field = WebDriverWait(driver, 5).until(
+        password_field = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["checkout_password"]))
         )
         password_field.send_keys(PASSWORD)
         logging.info("🔑 Entered password...")
 
-        sign_in_button = WebDriverWait(driver, 3).until(
+        sign_in_button = WebDriverWait(driver, 1).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout_sign_in_button"]))
         )
         sign_in_button.click()
         logging.info("✅ Clicked 'Sign in with password' button...")
 
-        # Step 4: Enter Payment Details
-        WebDriverWait(driver, 2).until(
+        # Step 4: Enter Payment Details FAST
+        WebDriverWait(driver, 1).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
         ).send_keys(CARD_NUMBER)
+
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
 
-        # Step 5: Click "Place Your Order" button
+        # Step 5: Click "Place Your Order" button FAST
         logging.info("🛒 Clicking 'Place Your Order' button...")
 
-        place_order_button = WebDriverWait(driver, 5).until(
+        place_order_button = WebDriverWait(driver, 2).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
         )
         place_order_button.click()
