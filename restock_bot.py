@@ -55,14 +55,12 @@ def login(store):
         logging.error("❌ Login failed for " + store["name"] + ": " + str(e))
 
 def check_stock(store):
-    """ Checks if the product is in stock by checking if Add to Cart is disabled. """
-    logging.info("Checking stock for {}...".format(store["name"]))
-    driver.get(store["product_url"])
-
-    retries = 3
-    for attempt in range(retries):
+    """ Continuously checks if the product is in stock by checking if Add to Cart is disabled. """
+    logging.info("🔍 Starting continuous stock check for {}...".format(store["name"]))
+    
+    while True:  # Runs forever until the item is in stock
         try:
-            logging.info("Checking if 'Add to Cart' button is present...")
+            logging.info("Checking if 'Add to Cart' button is enabled...")
 
             # Wait for the "Add to Cart" button to load
             add_to_cart_button = WebDriverWait(driver, 10).until(
@@ -79,13 +77,14 @@ def check_stock(store):
             else:
                 logging.info("🚀 {} is IN STOCK! Proceeding to checkout...".format(store["name"]))
                 add_to_cart(store)
-                return  # Stop checking after successful stock detection
+                return  # Stop checking once we start checkout
 
         except Exception as e:
-            logging.error("⚠️ Stock check failed for {} on attempt {}: {}".format(store["name"], attempt + 1, traceback.format_exc()))
+            logging.error("⚠️ Stock check failed for {}: {}".format(store["name"], traceback.format_exc()))
 
-    logging.error("❌ Giving up on {} after {} failed attempts.".format(store["name"], retries))
-
+        # Wait before checking again to avoid getting blocked
+        logging.info("🔄 {} is still out of stock. Checking again in 5 seconds...".format(store["name"]))
+        time.sleep(5)  # Wait before retrying
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
