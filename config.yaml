@@ -12,7 +12,7 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor94336414"  # ✅ Corrected!
+      add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
       view_cart: "div.styles_contentWrapper__p20AZ a"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
@@ -37,7 +37,7 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor93954435"  # ✅ Fixed!
+      add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
       view_cart: "div.styles_contentWrapper__p20AZ a"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
@@ -62,7 +62,7 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button#addToCartButtonOrTextIdFor88897904"
+      add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
       view_cart: "div.styles_contentWrapper__p20AZ a"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
