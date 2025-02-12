@@ -12,7 +12,7 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[data-test*='addToCart']"  # Generic selector for add to cart
+      add_to_cart: "button[id^='#addToCartButtonOrTextIdFor']:not([disabled])"
       view_cart: "a[href='/cart']"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
@@ -37,7 +37,7 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[data-test*='addToCart']"  
+      add_to_cart: "button[id^='#addToCartButtonOrTextIdFor']:not([disabled])" 
       view_cart: "a[href='/cart']"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
