@@ -64,15 +64,13 @@ def check_for_captcha():
             site_key = "your_target_site_key_here"  # Extract from HTML source
             page_url = driver.current_url
 
-            # Request CAPTCHA solution from 2Captcha
             captcha_id = requests.post(
                 f"http://2captcha.com/in.php?key={API_KEY}&method=userrecaptcha&googlekey={site_key}&pageurl={page_url}&json=1"
             ).json().get("request")
 
             logging.info("Waiting for CAPTCHA solution...")
-            time.sleep(15)  # Allow time for CAPTCHA workers to solve it
+            time.sleep(10)  # Reduce wait time from 15 to 10 seconds
 
-            # Retrieve solution
             captcha_solution = requests.get(
                 f"http://2captcha.com/res.php?key={API_KEY}&action=get&id={captcha_id}&json=1"
             ).json().get("request")
@@ -82,6 +80,15 @@ def check_for_captcha():
                 driver.execute_script(
                     f"document.getElementById('g-recaptcha-response').innerHTML = '{captcha_solution}';"
                 )
+
+                # Check if a verify button needs to be clicked
+                try:
+                    verify_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                    verify_button.click()
+                    logging.info("Clicked CAPTCHA verification button.")
+                except:
+                    logging.info("No CAPTCHA verification button found. Proceeding.")
+
                 return True
             else:
                 logging.error("Failed to solve CAPTCHA.")
@@ -90,61 +97,30 @@ def check_for_captcha():
         logging.error("Error solving CAPTCHA: {}".format(str(e)))
 
 
-def check_price(store, retries=3):
-    """Checks if the product price is within the allowed budget before purchase."""
-    for attempt in range(retries):
-        try:
-            price_element = WebDriverWait(driver, 2).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["price"]))
-            )
-            price_text = price_element.text.replace("$", "").strip()
-            price = float(price_text)
-
-            if price > store["max_price"]:
-                logging.warning("{} is too expensive! Price: ${}, Max Allowed: ${}".format(
-                    store["name"], price, store["max_price"]
-                ))
-                return False
-            else:
-                logging.info("{} is within budget! Price: ${}".format(store["name"], price))
-                return True
-        except Exception as e:
-            logging.error("Failed to check price for {}. Attempt {}/{}. Retrying in 2 seconds...".format(
-                store["name"], attempt + 1, retries
-            ))
-            time.sleep(2)
-
-    logging.error("Final price check failed for {} after {} attempts. Skipping this item.".format(store["name"], retries))
-    return False
-
 
 def check_stock(store):
-    """ Continuously checks if the product is in stock. """
+    """ Continuously checks if the product is in stock by checking if Add to Cart is enabled. """
     logging.info("Checking stock for {}...".format(store["name"]))
     driver.get(store["product_url"])
-    
+
     while True:
         try:
             check_for_captcha()
 
-            if not check_price(store):
-                return
-
             logging.info("Checking 'Add to Cart' button...")
             add_to_cart_button = WebDriverWait(driver, 2).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
+                EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
-            if not add_to_cart_button.get_attribute("disabled"):
-                logging.info("{} is IN STOCK! Proceeding to checkout...".format(store["name"]))
-                add_to_cart(store)
-                return
-            else:
-                logging.info("{} is OUT OF STOCK.".format(store["name"]))
-        except Exception as e:
-            logging.error("Stock check failed for {}: {}".format(store["name"], str(e)))
+
+            logging.info("{} is IN STOCK! Proceeding to checkout...".format(store["name"]))
+            add_to_cart(store)
+            return  # Stop checking once item is in stock
+
+        except Exception:
+            logging.info("{} is still out of stock. Retrying in 2 seconds...".format(store["name"]))
         
-        logging.info("{} is still out of stock. Checking again in 2 seconds...".format(store["name"]))
-        time.sleep(2)
+        time.sleep(2)  # Keep checking every 2 seconds
+
 
 
 def add_to_cart(store):
@@ -159,6 +135,47 @@ def add_to_cart(store):
         proceed_to_checkout(store)
     except Exception as e:
         logging.error("Failed to add item to cart at {}: {}".format(store["name"], str(e)))
+
+
+def proceed_to_checkout(store):
+    """ Completes checkout process. """
+    logging.info("Proceeding to checkout at {}...".format(store["name"]))
+    try:
+        check_for_captcha()
+        WebDriverWait(driver, 2).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["view_cart"]))
+        ).click()
+        WebDriverWait(driver, 2).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
+        ).click()
+
+        # If login is required at checkout, re-enter credentials
+        try:
+            password_field = WebDriverWait(driver, 1).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["checkout_password"]))
+            )
+            password_field.send_keys(PASSWORD)
+
+            WebDriverWait(driver, 1).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout_sign_in_button"]))
+            ).click()
+            logging.info("Re-logged into checkout page.")
+        except Exception:
+            logging.info("No login required at checkout.")
+
+        WebDriverWait(driver, 1).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
+        ).send_keys(CARD_NUMBER)
+        driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
+        driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
+        
+        WebDriverWait(driver, 2).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
+        ).click()
+        
+        logging.info("Order placed at {}!".format(store["name"]))
+    except Exception as e:
+        logging.error("Checkout failed for {}: {}".format(store["name"], str(e)))
 
 
 def main():
