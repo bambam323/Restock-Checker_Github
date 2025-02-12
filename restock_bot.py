@@ -5,6 +5,7 @@ import yaml
 import traceback
 import requests
 import urllib3
+import webbrowser
 from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -88,11 +89,14 @@ def check_stock(store):
 
             if not add_to_cart_buttons:
                 logging.warning("No 'Add to Cart' button found for " + store["name"] + ". Retrying in 3 seconds...")
-                
-                # Take a screenshot for debugging
-                screenshot_path = "debug_screenshot.png"
+
+                # 🚀 Automatically save and open the screenshot
+                screenshot_path = os.path.join(os.getcwd(), "debug_screenshot.png")
                 driver.save_screenshot(screenshot_path)
-                logging.warning("Screenshot saved: " + screenshot_path)
+                logging.warning("Screenshot saved at: " + screenshot_path)
+                
+                # 🚀 Auto-open the screenshot
+                webbrowser.open(screenshot_path)
 
             else:
                 for button in add_to_cart_buttons:
