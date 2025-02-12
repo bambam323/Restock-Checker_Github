@@ -10,7 +10,6 @@ websites:
         email: "input#username"
         password: "input#password"
         login_button: "button[data-test='login-button']"
-      stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
       add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
       view_cart: "div.styles_contentWrapper__p20AZ a"
@@ -35,7 +34,6 @@ websites:
         email: "input#username"
         password: "input#password"
         login_button: "button[data-test='login-button']"
-      stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
       add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
       view_cart: "div.styles_contentWrapper__p20AZ a"
@@ -60,7 +58,6 @@ websites:
         email: "input#username"
         password: "input#password"
         login_button: "button[data-test='login-button']"
-      stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
       add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
       view_cart: "div.styles_contentWrapper__p20AZ a"
@@ -73,25 +70,4 @@ websites:
         expiry: "input[name='expiry']"
         cvv: "input[name='cvv']"
         submit_button: "button[data-test='placeOrderButton']"
-
-  - name: "Best Buy"
-    product_url: "https://www.bestbuy.com/site/pokemon-trading-card-game-blooming-waters-premium-collection/6609201.p?skuId=6609201"
-    login_url: "https://www.bestbuy.com/identity/global/signin"
-    checkout_url: "https://www.bestbuy.com/cart"
-    max_price: 60
-    quantity: 1
-    selectors:
-      login:
-        email: "input#fld-e"
-        password: "input#fld-p1"
-        login_button: "button.btn-primary"
-      stock: "div.fulfillment-add-to-cart-button"
-      price: "div.priceView-hero-price span"
-      add_to_cart: "button.add-to-cart-button"
-      checkout: "a.go-to-cart-button"
-      captcha: "iframe[src*='captcha']"
-      payment:
-        card_number: "input[name='optimized-cc-card-number']"
-        expiry: "input[name='optimized-cc-expiration']"
-        cvv: "input[name='credit-card-cvv']"
-        submit_button: "button[data-track='Place your Order - Contact Card']"
+        
