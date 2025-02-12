@@ -40,14 +40,15 @@ except Exception as e:
 # Configure logging
 logging.basicConfig(filename="restock_bot.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
-# Setup Chrome WebDriver (Works with Older Selenium)
+# Setup Chrome WebDriver (Headless mode optional)
 options = webdriver.ChromeOptions()
-options.add_argument("--headless")
+# options.add_argument("--headless")  # Disable this line if CAPTCHA is happening too often
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("start-maximized")
+options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36")
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 
@@ -56,7 +57,7 @@ driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () =>
 
 
 def check_for_captcha():
-    """Detects and solves CAPTCHA if present using 2Captcha."""
+    """Detects and solves CAPTCHA if present using 2Captcha (only called during login/checkout)."""
     try:
         captcha_iframe = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='captcha']")
         if captcha_iframe:
@@ -110,9 +111,6 @@ def check_for_captcha():
                 "document.querySelector('textarea#g-recaptcha-response').innerHTML = '" + captcha_solution + "';"
             )
 
-            # Manually trigger CAPTCHA verification
-            driver.execute_script("document.querySelector('.g-recaptcha').dispatchEvent(new Event('change'))")
-
             # Click verify or submit button if necessary
             try:
                 verify_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
@@ -126,7 +124,6 @@ def check_for_captcha():
         logging.error("Error solving CAPTCHA: " + str(e))
 
 
-
 def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is enabled. """
     logging.info("Checking stock for " + store["name"] + "...")
@@ -134,8 +131,6 @@ def check_stock(store):
 
     while True:
         try:
-            check_for_captcha()
-
             logging.info("Checking 'Add to Cart' button...")
 
             # Wait for the page to fully load before looking for the button
@@ -158,12 +153,10 @@ def check_stock(store):
         time.sleep(2)
 
 
-
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
     logging.info("Adding item to cart at " + store["name"] + "...")
     try:
-        check_for_captcha()
         WebDriverWait(driver, 1).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         ).click()
@@ -171,33 +164,6 @@ def add_to_cart(store):
         proceed_to_checkout(store)
     except Exception as e:
         logging.error("Failed to add item to cart at " + store["name"] + ": " + str(e))
-
-
-def proceed_to_checkout(store):
-    """ Completes checkout process. """
-    logging.info("Proceeding to checkout at " + store["name"] + "...")
-    try:
-        check_for_captcha()
-        WebDriverWait(driver, 2).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["view_cart"]))
-        ).click()
-        WebDriverWait(driver, 2).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
-        ).click()
-
-        WebDriverWait(driver, 1).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
-        ).send_keys(CARD_NUMBER)
-        driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
-        driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
-
-        WebDriverWait(driver, 2).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
-        ).click()
-
-        logging.info("Order placed at " + store["name"] + "!")
-    except Exception as e:
-        logging.error("Checkout failed for " + store["name"] + ": " + str(e))
 
 
 def main():
