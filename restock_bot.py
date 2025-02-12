@@ -57,7 +57,7 @@ def login(store):
 def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is disabled. """
     logging.info("🔍 Starting continuous stock check for {}...".format(store["name"]))
-    
+
     while True:  # Runs indefinitely
         try:
             logging.info("Checking if 'Add to Cart' button is enabled... Using selector: {}".format(store["selectors"]["add_to_cart"]))
@@ -67,14 +67,30 @@ def check_stock(store):
             time.sleep(2)  # Small delay to allow elements to load
 
             # **DEBUG: Print full page source to log file**
-            logging.info(driver.page_source)
+            logging.info("📄 PAGE SOURCE:\n" + driver.page_source)
 
-            # Wait for the "Add to Cart" button
-            add_to_cart_button = WebDriverWait(driver, 15).until(
-                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
-            )
+            # Try multiple "Add to Cart" selectors
+            add_to_cart_selectors = [
+                "button[id^='addToCartButtonOrTextIdFor']",
+                "button[data-test='shippingButton']",
+                "button[data-test='orderPickupButton']"
+            ]
 
-            logging.info("✅ 'Add to Cart' button found.")
+            add_to_cart_button = None
+            for selector in add_to_cart_selectors:
+                try:
+                    add_to_cart_button = WebDriverWait(driver, 5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR, selector))
+                    )
+                    logging.info("✅ 'Add to Cart' button found using selector: {}".format(selector))
+                    break  # Stop checking once found
+                except:
+                    continue  # Try next selector
+
+            if not add_to_cart_button:
+                logging.info("⚠️ 'Add to Cart' button NOT found.")
+                continue  # Skip to next check
+
             driver.execute_script("arguments[0].scrollIntoView();", add_to_cart_button)
 
             # Check if the button is disabled
@@ -93,7 +109,6 @@ def check_stock(store):
         # Keep checking every 3 seconds
         logging.info("🔄 {} is still out of stock. Checking again in 3 seconds...".format(store["name"]))
         time.sleep(3)
-
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
