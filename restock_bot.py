@@ -65,18 +65,33 @@ def check_for_captcha():
             page_url = driver.current_url
 
             # Request CAPTCHA solution from 2Captcha
-            captcha_id = requests.post(
+            captcha_id_response = requests.post(
                 "http://2captcha.com/in.php?key=" + API_KEY + "&method=userrecaptcha&googlekey=" +
                 site_key + "&pageurl=" + page_url + "&json=1"
-            ).json().get("request")
+            ).json()
+
+            if "request" not in captcha_id_response:
+                logging.error("Failed to request CAPTCHA solving: " + str(captcha_id_response))
+                return False
+
+            captcha_id = captcha_id_response["request"]
 
             logging.info("Waiting for CAPTCHA solution...")
             time.sleep(10)  # Reduce wait time for faster solving
 
-            # Retrieve solution
-            captcha_solution = requests.get(
-                "http://2captcha.com/res.php?key=" + API_KEY + "&action=get&id=" + str(captcha_id) + "&json=1"
-            ).json().get("request")
+            # Retrieve solution (retry if necessary)
+            for attempt in range(5):
+                captcha_solution_response = requests.get(
+                    "http://2captcha.com/res.php?key=" + API_KEY + "&action=get&id=" + str(captcha_id) + "&json=1"
+                ).json()
+
+                captcha_solution = captcha_solution_response.get("request", None)
+
+                if captcha_solution in ["CAPCHA_NOT_READY", "ERROR_CAPTCHA_UNSOLVABLE", None]:
+                    logging.warning("CAPTCHA solution not ready. Retrying in 3 seconds... (" + str(attempt + 1) + "/5)")
+                    time.sleep(3)
+                else:
+                    break
 
             # Check if the solution is valid
             if not captcha_solution or captcha_solution in ["CAPCHA_NOT_READY", "ERROR_CAPTCHA_UNSOLVABLE"]:
@@ -123,7 +138,7 @@ def check_stock(store):
 
             logging.info("Checking 'Add to Cart' button...")
 
-            # Wait for the button to be available
+            # Wait for the page to fully load before looking for the button
             WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
@@ -141,6 +156,7 @@ def check_stock(store):
             logging.error("Stock check failed for " + store["name"] + ": " + str(e))
 
         time.sleep(2)
+
 
 
 def add_to_cart(store):
