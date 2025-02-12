@@ -12,7 +12,6 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.remote.remote_connection import RemoteConnection
-from selenium.webdriver.chrome.service import Service
 
 # Disable warnings & increase connection pool size
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -41,7 +40,7 @@ except Exception as e:
 # Configure logging
 logging.basicConfig(filename="restock_bot.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
-# Setup Chrome WebDriver (Headless mode optional)
+# Setup Chrome WebDriver (Fully Compatible with Older Versions)
 options = webdriver.ChromeOptions()
 # options.add_argument("--headless")  # Disable this line if CAPTCHA is happening too often
 options.add_argument("--disable-gpu")
@@ -52,9 +51,9 @@ options.add_argument("start-maximized")
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 
-# Automatically detect the actual User-Agent from Chrome
+# Automatically detect the actual User-Agent from Chrome (Works with older Selenium)
 try:
-    temp_driver = webdriver.Chrome(service=Service("/usr/local/bin/chromedriver"))
+    temp_driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
     actual_user_agent = temp_driver.execute_script("return navigator.userAgent;")
     temp_driver.quit()
     options.add_argument("user-agent=" + actual_user_agent)
@@ -62,7 +61,8 @@ try:
 except Exception as e:
     logging.error("Failed to retrieve User-Agent. Defaulting to Chrome’s built-in User-Agent.")
 
-driver = webdriver.Chrome(service=Service("/usr/local/bin/chromedriver"), options=options)
+# Start Chrome WebDriver with the correct method for older Selenium versions
+driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
 driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
 
@@ -158,3 +158,4 @@ if __name__ == "__main__":
     finally:
         driver.quit()
         logging.info("Browser closed.")
+
