@@ -57,6 +57,8 @@ def login(store):
 def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is disabled. """
     logging.info("🔍 Starting continuous stock check for {}...".format(store["name"]))
+    logging.info("📄 PAGE SOURCE:\n" + driver.page_source)
+
 
     while True:  # Runs indefinitely
         try:
