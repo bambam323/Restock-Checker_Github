@@ -11,7 +11,7 @@ websites:
         password: "input#password"
         login_button: "button[data-test='login-button']"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
+      add_to_cart: "button[id^='addToCartButtonOrTextIdFor'], button[data-test='shippingButton'], button[data-test='orderPickupButton']"
       view_cart: "div.styles_contentWrapper__p20AZ a"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
@@ -35,7 +35,7 @@ websites:
         password: "input#password"
         login_button: "button[data-test='login-button']"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
+      add_to_cart: "button[id^='addToCartButtonOrTextIdFor'], button[data-test='shippingButton'], button[data-test='orderPickupButton']"
       view_cart: "div.styles_contentWrapper__p20AZ a"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
@@ -59,7 +59,7 @@ websites:
         password: "input#password"
         login_button: "button[data-test='login-button']"
       price: "span[data-test='product-price']"
-      add_to_cart: "button[id^='addToCartButtonOrTextIdFor']"  # Matches all "Add to Cart" buttons
+      add_to_cart: "button[id^='addToCartButtonOrTextIdFor'], button[data-test='shippingButton'], button[data-test='orderPickupButton']"
       view_cart: "div.styles_contentWrapper__p20AZ a"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
