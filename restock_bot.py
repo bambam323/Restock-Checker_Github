@@ -12,6 +12,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from concurrent.futures import ThreadPoolExecutor
 from selenium.webdriver.remote.remote_connection import RemoteConnection
+from selenium.webdriver.chrome.service import Service
 
 # Disable warnings & increase connection pool size
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -48,11 +49,20 @@ options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
 options.add_argument("--disable-blink-features=AutomationControlled")
 options.add_argument("start-maximized")
-options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/100.0.4896.127 Safari/537.36")
 options.add_experimental_option("excludeSwitches", ["enable-automation"])
 options.add_experimental_option("useAutomationExtension", False)
 
-driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
+# Automatically detect the actual User-Agent from Chrome
+try:
+    temp_driver = webdriver.Chrome(service=Service("/usr/local/bin/chromedriver"))
+    actual_user_agent = temp_driver.execute_script("return navigator.userAgent;")
+    temp_driver.quit()
+    options.add_argument("user-agent=" + actual_user_agent)
+    logging.info("Using detected User-Agent: " + actual_user_agent)
+except Exception as e:
+    logging.error("Failed to retrieve User-Agent. Defaulting to Chrome’s built-in User-Agent.")
+
+driver = webdriver.Chrome(service=Service("/usr/local/bin/chromedriver"), options=options)
 driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
 
@@ -70,19 +80,19 @@ def check_stock(store):
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
-            # Check if the button exists
+            # Find the button
             add_to_cart_buttons = driver.find_elements(By.CSS_SELECTOR, store["selectors"]["add_to_cart"])
 
             if not add_to_cart_buttons:
                 logging.warning("No 'Add to Cart' button found for " + store["name"] + ". Retrying in 2 seconds...")
             else:
-                # Select the first button that is enabled
+                # Wait for at least one button to become enabled
                 for button in add_to_cart_buttons:
                     if button.is_enabled():
                         logging.info(store["name"] + " is IN STOCK! Proceeding to checkout...")
                         add_to_cart(store)
                         return  # Stop checking once item is in stock
-
+                
                 logging.info(store["name"] + " is OUT OF STOCK. Retrying in 2 seconds...")
 
         except Exception as e:
