@@ -64,16 +64,17 @@ def check_stock(store):
 
             # Load product page
             driver.get(store["product_url"])
-            time.sleep(1)  # Small delay to allow elements to load
+            time.sleep(2)  # Small delay to allow elements to load
+
+            # **DEBUG: Print full page source to log file**
+            logging.info(driver.page_source)
 
             # Wait for the "Add to Cart" button
-            add_to_cart_button = WebDriverWait(driver, 10).until(
+            add_to_cart_button = WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
             logging.info("✅ 'Add to Cart' button found.")
-
-            # Ensure the button is visible
             driver.execute_script("arguments[0].scrollIntoView();", add_to_cart_button)
 
             # Check if the button is disabled
@@ -92,6 +93,7 @@ def check_stock(store):
         # Keep checking every 3 seconds
         logging.info("🔄 {} is still out of stock. Checking again in 3 seconds...".format(store["name"]))
         time.sleep(3)
+
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
