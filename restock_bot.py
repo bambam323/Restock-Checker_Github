@@ -87,13 +87,14 @@ def check_price(store):
             logging.warning("{} is too expensive! Price: ${}, Max Allowed: ${}".format(
                 store["name"], price, store["max_price"]
             ))
-            return False
+            return False  # Skip checkout for this product
         else:
             logging.info("{} is within budget! Price: ${}".format(store["name"], price))
-            return True
+            return True  # Proceed with checkout
     except Exception as e:
-        logging.error("Failed to check price for {}: {}".format(store["name"], str(e)))
-        return False
+        logging.error("Failed to check price for {}. Retrying in 5 seconds...".format(store["name"]))
+        time.sleep(5)
+        return check_price(store)  # Retry instead of failing
 
 
 def check_stock(store):
@@ -109,7 +110,7 @@ def check_stock(store):
                 return
 
             logging.info("Checking 'Add to Cart' button...")
-            add_to_cart_button = WebDriverWait(driver, 5).until(
+            add_to_cart_button = WebDriverWait(driver, 2).until(  # Reduced wait time
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
             if not add_to_cart_button.get_attribute("disabled"):
@@ -121,8 +122,8 @@ def check_stock(store):
         except Exception as e:
             logging.error("Stock check failed for {}: {}".format(store["name"], str(e)))
         
-        logging.info("{} is still out of stock. Checking again in 3 seconds...".format(store["name"]))
-        time.sleep(3)
+        logging.info("{} is still out of stock. Checking again in 1 second...".format(store["name"]))
+        time.sleep(1)  # Reduced wait time between stock checks
 
 
 def add_to_cart(store):
@@ -167,10 +168,13 @@ def proceed_to_checkout(store):
 
 
 def main():
-    """ Runs stock checks concurrently for all stores. """
+    """Runs stock checks in an infinite loop with a short delay."""
     logging.info("Starting Restock Bot...")
-    with ThreadPoolExecutor(max_workers=min(3, len(config["websites"]))) as executor:
-        executor.map(check_stock, config["websites"])
+    while True:
+        with ThreadPoolExecutor(max_workers=min(3, len(config["websites"]))) as executor:
+            executor.map(check_stock, config["websites"])
+        logging.info("Sleeping for 5 seconds before checking again...")
+        time.sleep(5)  # Reduce sleep time to 5 seconds
 
 
 if __name__ == "__main__":
