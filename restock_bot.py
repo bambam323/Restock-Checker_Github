@@ -63,11 +63,14 @@ def check_stock(store):
             logging.info("Checking if 'Add to Cart' button is enabled... Using selector: {}".format(store["selectors"]["add_to_cart"]))
 
             # Wait for the "Add to Cart" button to load
-            add_to_cart_button = WebDriverWait(driver, 5).until(
+            add_to_cart_button = WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
             logging.info("✅ 'Add to Cart' button found.")
+
+            # Ensure the button is visible
+            driver.execute_script("arguments[0].scrollIntoView();", add_to_cart_button)
 
             # Check if the button is disabled
             is_disabled = add_to_cart_button.get_attribute("disabled")
@@ -82,9 +85,9 @@ def check_stock(store):
         except Exception as e:
             logging.error("⚠️ Stock check failed for {}: {}".format(store["name"], traceback.format_exc()))
 
-        # Wait before checking again to avoid getting blocked
+        # Keep checking every 3 seconds
         logging.info("🔄 {} is still out of stock. Checking again in 3 seconds...".format(store["name"]))
-        time.sleep(3)  # Reduced from 5 seconds to 3
+        time.sleep(3)
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
