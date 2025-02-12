@@ -47,15 +47,44 @@ driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options
 driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
 
+import requests
+API_KEY = "your_2captcha_api_key"  # Get from 2Captcha website
+
 def check_for_captcha():
-    """Detects if a CAPTCHA appears and logs a warning."""
+    """Detects reCAPTCHA and solves it using 2Captcha API."""
     try:
         captcha_iframe = driver.find_elements(By.CSS_SELECTOR, "iframe[src*='captcha']")
         if captcha_iframe:
-            logging.warning("CAPTCHA detected! Manual intervention required.")
-            input("Solve the CAPTCHA manually, then press Enter to continue...")
-    except Exception:
-        pass
+            logging.warning("CAPTCHA detected! Attempting to solve automatically...")
+
+            site_key = "your_target_site_key_here"  # Find from HTML
+            page_url = driver.current_url
+
+            # Request CAPTCHA solution
+            captcha_id = requests.post(
+                f"http://2captcha.com/in.php?key={API_KEY}&method=userrecaptcha&googlekey={site_key}&pageurl={page_url}&json=1"
+            ).json().get("request")
+
+            logging.info("Waiting for CAPTCHA solution...")
+            time.sleep(15)  # Wait for CAPTCHA workers to solve it
+
+            # Get the solved CAPTCHA response
+            captcha_solution = requests.get(
+                f"http://2captcha.com/res.php?key={API_KEY}&action=get&id={captcha_id}&json=1"
+            ).json().get("request")
+
+            if captcha_solution:
+                logging.info("CAPTCHA solved successfully!")
+                driver.execute_script(
+                    f"document.getElementById('g-recaptcha-response').innerHTML = '{captcha_solution}';"
+                )
+                return True
+            else:
+                logging.error("Failed to solve CAPTCHA.")
+                return False
+    except Exception as e:
+        logging.error("Error solving CAPTCHA: {}".format(str(e)))
+
 
 
 def login(store):
