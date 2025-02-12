@@ -73,32 +73,42 @@ def check_stock(store):
 
     while True:
         try:
+            logging.info("Waiting for page to fully load...")
+            time.sleep(5)  # Ensure JavaScript elements load
+
             logging.info("Checking 'Add to Cart' button...")
 
-            # Wait for the button to appear
-            WebDriverWait(driver, 10).until(
+            # Wait longer for the correct button to appear
+            WebDriverWait(driver, 15).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
-            # Find the button
+            # Find all buttons matching the selector
             add_to_cart_buttons = driver.find_elements(By.CSS_SELECTOR, store["selectors"]["add_to_cart"])
 
             if not add_to_cart_buttons:
-                logging.warning("No 'Add to Cart' button found for " + store["name"] + ". Retrying in 2 seconds...")
+                logging.warning("No 'Add to Cart' button found for " + store["name"] + ". Retrying in 3 seconds...")
+                
+                # Take a screenshot for debugging
+                screenshot_path = "debug_screenshot.png"
+                driver.save_screenshot(screenshot_path)
+                logging.warning("Screenshot saved: " + screenshot_path)
+
             else:
-                # Wait for at least one button to become enabled
                 for button in add_to_cart_buttons:
                     if button.is_enabled():
                         logging.info(store["name"] + " is IN STOCK! Proceeding to checkout...")
+                        button.click()
                         add_to_cart(store)
                         return  # Stop checking once item is in stock
                 
-                logging.info(store["name"] + " is OUT OF STOCK. Retrying in 2 seconds...")
+                logging.info(store["name"] + " is OUT OF STOCK. Retrying in 3 seconds...")
 
         except Exception as e:
             logging.error("Stock check failed for " + store["name"] + ": " + str(e))
 
-        time.sleep(2)
+        time.sleep(3)
+
 
 
 def add_to_cart(store):
