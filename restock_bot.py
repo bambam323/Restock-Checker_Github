@@ -57,10 +57,13 @@ def login(store):
 def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is disabled. """
     logging.info("🔍 Starting continuous stock check for {}...".format(store["name"]))
+
+    attempt = 0  # Track how many times we've checked
     
-    while True:  # Runs forever until the item is in stock
+    while True:  # Infinite loop to check continuously
         try:
-            logging.info("Checking if 'Add to Cart' button is enabled...")
+            attempt += 1  # Increment attempt counter
+            logging.info("Checking if 'Add to Cart' button is enabled... Attempt #{}".format(attempt))
 
             # Wait for the "Add to Cart" button to load
             add_to_cart_button = WebDriverWait(driver, 10).until(
@@ -73,18 +76,20 @@ def check_stock(store):
             is_disabled = add_to_cart_button.get_attribute("disabled")
 
             if is_disabled:
-                logging.info("⏳ {} is OUT OF STOCK (Button is disabled).".format(store["name"]))
+                logging.info("⏳ {} is OUT OF STOCK (Button is disabled). Attempt #{}".format(store["name"], attempt))
             else:
                 logging.info("🚀 {} is IN STOCK! Proceeding to checkout...".format(store["name"]))
                 add_to_cart(store)
-                return  # Stop checking after successful stock detection
+                return  # Stop checking once we start checkout
 
         except Exception as e:
-            logging.error("⚠️ Stock check failed for {} on attempt {}: {}".format(store["name"], attempt + 1, traceback.format_exc()))
+            logging.error("⚠️ Stock check failed for {} on attempt {}: {}".format(
+                store["name"], attempt, traceback.format_exc()
+            ))
 
-        # Wait before checking again to avoid getting blocked
-        logging.info("🔄 {} is still out of stock. Checking again in 5 seconds...".format(store["name"]))
-        time.sleep(5)  # Wait before retrying
+        # Wait before checking again to avoid detection
+        logging.info("🔄 {} is still out of stock. Checking again in 2 seconds...".format(store["name"]))
+        time.sleep(2)  # Speed optimized from 5s to 2s for faster checking
 
 
 def add_to_cart(store):
