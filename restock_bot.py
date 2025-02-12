@@ -78,36 +78,38 @@ def check_for_captcha():
                 "http://2captcha.com/res.php?key=" + API_KEY + "&action=get&id=" + str(captcha_id) + "&json=1"
             ).json().get("request")
 
-            if captcha_solution:
-                logging.info("CAPTCHA solved successfully!")
-
-                # Ensure the CAPTCHA response field exists before setting the value
-                WebDriverWait(driver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, "textarea#g-recaptcha-response"))
-                )
-
-                # Inject the CAPTCHA solution
-                driver.execute_script(
-                    "document.querySelector('textarea#g-recaptcha-response').innerHTML = '" + captcha_solution + "';"
-                )
-
-                # Manually trigger CAPTCHA verification
-                driver.execute_script("document.querySelector('.g-recaptcha').dispatchEvent(new Event('change'))")
-
-                # Click verify or submit button if necessary
-                try:
-                    verify_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
-                    verify_button.click()
-                    logging.info("Clicked CAPTCHA verification button.")
-                except:
-                    logging.info("No CAPTCHA verification button found. Proceeding.")
-
-                return True
-            else:
-                logging.error("Failed to solve CAPTCHA.")
+            # Check if the solution is valid
+            if not captcha_solution or captcha_solution in ["CAPCHA_NOT_READY", "ERROR_CAPTCHA_UNSOLVABLE"]:
+                logging.error("Failed to solve CAPTCHA: " + str(captcha_solution))
                 return False
+
+            logging.info("CAPTCHA solved successfully!")
+
+            # Ensure the CAPTCHA response field exists before setting the value
+            WebDriverWait(driver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "textarea#g-recaptcha-response"))
+            )
+
+            # Inject the CAPTCHA solution
+            driver.execute_script(
+                "document.querySelector('textarea#g-recaptcha-response').innerHTML = '" + captcha_solution + "';"
+            )
+
+            # Manually trigger CAPTCHA verification
+            driver.execute_script("document.querySelector('.g-recaptcha').dispatchEvent(new Event('change'))")
+
+            # Click verify or submit button if necessary
+            try:
+                verify_button = driver.find_element(By.CSS_SELECTOR, "button[type='submit']")
+                verify_button.click()
+                logging.info("Clicked CAPTCHA verification button.")
+            except:
+                logging.info("No CAPTCHA verification button found. Proceeding.")
+
+            return True
     except Exception as e:
         logging.error("Error solving CAPTCHA: " + str(e))
+
 
 
 def check_stock(store):
@@ -120,7 +122,9 @@ def check_stock(store):
             check_for_captcha()
 
             logging.info("Checking 'Add to Cart' button...")
-            WebDriverWait(driver, 5).until(
+
+            # Wait for the button to be available
+            WebDriverWait(driver, 10).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
