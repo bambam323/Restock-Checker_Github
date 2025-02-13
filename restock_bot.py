@@ -136,33 +136,40 @@ def check_stock(store):
         time.sleep(random.uniform(2, 5))  # 🚀 Randomized delay before next check
 
 
-def close_popups():
-    """Detects and closes any pop-ups blocking the 'Add to Cart' button."""
-    try:
-        popup = WebDriverWait(driver, 2).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "div.ReactModal__Overlay"))
-        )
-        if popup:
-            logging.info("🚨 Pop-up detected! Attempting to close...")
-            driver.execute_script("arguments[0].remove();", popup)  # Remove the pop-up using JavaScript
-            logging.info("✅ Pop-up closed successfully.")
-    except Exception:
-        logging.info("No pop-ups detected. Proceeding with checkout.")
-
 
 def add_to_cart(store):
-    """ Adds item to cart and proceeds to checkout """
+    """ Adds item to cart and interacts with the 'Added to Cart' modal before proceeding to checkout """
     logging.info("Adding item to cart at " + store["name"] + "...")
+
     try:
+        # Close any unexpected pop-ups that might block the button (not the "Added to Cart" modal)
+        wait_for_popups_to_close()
+
+        # Wait for the "Add to Cart" button to become clickable
         add_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         )
+
         add_button.click()
-        logging.info("Item added to cart at " + store["name"] + "!")
+        logging.info("✅ Item added to cart at " + store["name"] + "! Waiting for confirmation...")
+
+        # Wait for "Added to Cart" modal to appear
+        modal = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-test='content-wrapper']"))
+        )
+        logging.info("🛒 'Added to Cart' modal detected!")
+
+        # Click "View Cart & Check Out" inside the modal
+        checkout_button = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.LINK_TEXT, "View cart & check out"))
+        )
+        checkout_button.click()
+        logging.info("✅ Navigated to cart page. Proceeding to checkout...")
 
         proceed_to_checkout(store)
+
     except Exception as e:
-        logging.error("Failed to add item to cart at " + store["name"] + ": " + str(e))
+        logging.error("❌ Failed to add item to cart at " + store["name"] + ": " + str(e))
 
 
 def proceed_to_checkout(store):
