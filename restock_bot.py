@@ -6,6 +6,7 @@ import traceback
 import requests
 import urllib3
 import webbrowser
+import random  # 🚀 Added random module for randomized delays
 from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -68,35 +69,35 @@ driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () =>
 
 
 def check_stock(store):
-    """ Continuously checks if the product is in stock by checking if Add to Cart is enabled. """
+    """ Continuously checks if the product is in stock while reducing detection risks. """
     logging.info("Checking stock for " + store["name"] + "...")
 
     while True:
         try:
             driver.get(store["product_url"])
             logging.info("Waiting for page to fully load...")
-            time.sleep(5)  # Ensure JavaScript elements load
+            time.sleep(random.uniform(2, 5))  # 🚀 Randomized delay to prevent detection
 
             logging.info("Checking 'Add to Cart' button...")
 
-            # Wait longer for the correct button to appear
-            WebDriverWait(driver, 15).until(
+            # Reduced timeout from 15s to 5s for faster failures
+            WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
-            logging.info("Successfully obtained WebDriver");
+            logging.info("Successfully obtained WebDriver")
 
             # Find all buttons matching the selector
             add_to_cart_buttons = driver.find_elements(By.CSS_SELECTOR, store["selectors"]["add_to_cart"])
 
             if not add_to_cart_buttons:
-                logging.warning("No 'Add to Cart' button found for " + store["name"] + ". Retrying in 3 seconds...")
+                logging.warning("No 'Add to Cart' button found for " + store["name"] + ". Retrying soon...")
 
                 # 🚀 Automatically save and open the screenshot
                 screenshot_path = os.path.join(os.getcwd(), "debug_screenshot.png")
                 driver.save_screenshot(screenshot_path)
                 logging.warning("Screenshot saved at: " + screenshot_path)
-                
+
                 # 🚀 Auto-open the screenshot
                 webbrowser.open(screenshot_path)
 
@@ -108,21 +109,20 @@ def check_stock(store):
                         add_to_cart(store)
                         return  # Stop checking once item is in stock
                 
-                logging.info(store["name"] + " is OUT OF STOCK. Retrying in 3 seconds...")
+                logging.info(store["name"] + " is OUT OF STOCK. Retrying soon...")
 
         except Exception as e:
             logging.error("Stock check failed for " + store["name"] + ": " + str(e))
             logging.error("Full Exception Traceback:\n" + traceback.format_exc())
 
-        time.sleep(3)
-
+        time.sleep(random.uniform(2, 4))  # 🚀 Randomized delay before retrying
 
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
     logging.info("Adding item to cart at " + store["name"] + "...")
     try:
-        # Wait for the button to become clickable
+        # Reduced timeout for faster response
         add_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         )
@@ -134,7 +134,7 @@ def add_to_cart(store):
 
 
 def proceed_to_checkout(store):
-    """Completes checkout process with automatic retry on failure (Compatible with Older Python & Selenium)"""
+    """Completes checkout process with automatic retry on failure (Optimized for Older Selenium)"""
     logging.info("Proceeding to checkout at " + store["name"] + "...")
 
     attempt = 0
@@ -142,19 +142,16 @@ def proceed_to_checkout(store):
 
     while attempt < max_attempts:
         try:
-            # Step 1: Click "View Cart"
             WebDriverWait(driver, 3).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["view_cart"]))
             ).click()
             logging.info("✅ Clicked 'View Cart' for " + store["name"])
 
-            # Step 2: Click "Checkout"
             WebDriverWait(driver, 3).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
             ).click()
             logging.info("✅ Clicked 'Checkout' for " + store["name"])
 
-            # Step 3: Enter payment details
             WebDriverWait(driver, 3).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
             ).send_keys(CARD_NUMBER)
@@ -162,7 +159,6 @@ def proceed_to_checkout(store):
             driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
             logging.info("✅ Entered payment details for " + store["name"])
 
-            # Step 4: Click "Place Order"
             WebDriverWait(driver, 3).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
             ).click()
@@ -174,20 +170,20 @@ def proceed_to_checkout(store):
             attempt += 1
             logging.error("❌ Checkout failed (Attempt {}/{}): {}".format(attempt, max_attempts, str(e)))
             if attempt < max_attempts:
-                logging.info("🔄 Retrying checkout in 3 seconds...")
-                time.sleep(3)  # Wait before retrying
+                logging.info("🔄 Retrying checkout soon...")
+                time.sleep(random.uniform(3, 5))  # 🚀 Randomized retry delay
 
     logging.error("🚨 FINAL CHECKOUT FAILURE for {}. Manual intervention required.".format(store["name"]))
 
 
 def main():
-    """Runs stock checks with controlled threading."""
+    """Runs stock checks continuously with controlled delays."""
     logging.info("Starting Restock Bot...")
     while True:
-        with ThreadPoolExecutor(max_workers=1) as executor:  # Reduce parallel checks
+        with ThreadPoolExecutor(max_workers=1) as executor:
             executor.map(check_stock, config["websites"])
-        logging.info("Sleeping for 2 seconds before checking again...")
-        time.sleep(2)
+        logging.info("Sleeping before rechecking stock...")
+        time.sleep(random.uniform(2, 5))  # 🚀 Randomized interval before looping
 
 
 if __name__ == "__main__":
@@ -196,4 +192,3 @@ if __name__ == "__main__":
     finally:
         driver.quit()
         logging.info("Browser closed.")
-
