@@ -19,7 +19,7 @@ websites:
       checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
 
-  - name: "Target -Pokemon Scarlet Violet S3.5 Booster Bundle Box"
+  - name: "Target - Pokemon Scarlet Violet S3.5 Booster Bundle Box"
     product_url: "https://www.target.com/p/pokemon-scarlet-violet-s3-5-booster-bundle-box/-/A-88897904#lnk=sametab"
     login_url: "https://www.target.com/account/sign-in"
     checkout_url: "https://www.target.com/co-review"
@@ -39,8 +39,7 @@ websites:
       checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
 
-
-   - name: "Target -Charizard ex Super-Premium Collection"
+  - name: "Target - Charizard ex Super-Premium Collection"
     product_url: "https://www.target.com/p/pok-233-mon-trading-card-game-charizard-ex-super-premium-collection/-/A-91670547#lnk=sametab"
     login_url: "https://www.target.com/account/sign-in"
     checkout_url: "https://www.target.com/co-review"
@@ -59,4 +58,3 @@ websites:
       checkout_password: "input[data-test='login-password']"
       checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
-
