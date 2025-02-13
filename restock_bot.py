@@ -70,10 +70,10 @@ driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () =>
 def check_stock(store):
     """ Continuously checks if the product is in stock by checking if Add to Cart is enabled. """
     logging.info("Checking stock for " + store["name"] + "...")
-    driver.get(store["product_url"])
 
     while True:
         try:
+            driver.get(store["product_url"])
             logging.info("Waiting for page to fully load...")
             time.sleep(5)  # Ensure JavaScript elements load
 
