@@ -197,7 +197,7 @@ def proceed_to_checkout(store):
 def main():
     logging.info("Starting Restock Bot...")
     while True:
-        with ThreadPoolExecutor(max_workers=1) as executor:
+        with ThreadPoolExecutor(max_workers=3) as executor:
             executor.map(check_stock, config["websites"])
         logging.info("Sleeping before rechecking stock...")
         time.sleep(random.uniform(2, 5))
