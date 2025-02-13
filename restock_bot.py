@@ -134,29 +134,50 @@ def add_to_cart(store):
 
 
 def proceed_to_checkout(store):
-    """ Completes checkout process. """
+    """Completes checkout process with automatic retry on failure (Compatible with Older Python & Selenium)"""
     logging.info("Proceeding to checkout at " + store["name"] + "...")
-    try:
-        WebDriverWait(driver, 2).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["view_cart"]))
-        ).click()
-        WebDriverWait(driver, 2).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
-        ).click()
 
-        WebDriverWait(driver, 1).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
-        ).send_keys(CARD_NUMBER)
-        driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
-        driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
+    attempt = 0
+    max_attempts = 3  # Retry up to 3 times
 
-        WebDriverWait(driver, 2).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
-        ).click()
+    while attempt < max_attempts:
+        try:
+            # Step 1: Click "View Cart"
+            WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["view_cart"]))
+            ).click()
+            logging.info("✅ Clicked 'View Cart' for " + store["name"])
 
-        logging.info("Order placed at " + store["name"] + "!")
-    except Exception as e:
-        logging.error("Checkout failed for " + store["name"] + ": " + str(e))
+            # Step 2: Click "Checkout"
+            WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
+            ).click()
+            logging.info("✅ Clicked 'Checkout' for " + store["name"])
+
+            # Step 3: Enter payment details
+            WebDriverWait(driver, 3).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
+            ).send_keys(CARD_NUMBER)
+            driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
+            driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
+            logging.info("✅ Entered payment details for " + store["name"])
+
+            # Step 4: Click "Place Order"
+            WebDriverWait(driver, 3).until(
+                EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
+            ).click()
+            logging.info("🎉 Order placed successfully for " + store["name"] + "!")
+
+            return  # Exit loop if checkout is successful
+
+        except Exception as e:
+            attempt += 1
+            logging.error("❌ Checkout failed (Attempt {}/{}): {}".format(attempt, max_attempts, str(e)))
+            if attempt < max_attempts:
+                logging.info("🔄 Retrying checkout in 3 seconds...")
+                time.sleep(3)  # Wait before retrying
+
+    logging.error("🚨 FINAL CHECKOUT FAILURE for {}. Manual intervention required.".format(store["name"]))
 
 
 def main():
