@@ -136,6 +136,20 @@ def check_stock(store):
         time.sleep(random.uniform(2, 5))  # 🚀 Randomized delay before next check
 
 
+def close_popups():
+    """Detects and closes any pop-ups blocking the 'Add to Cart' button."""
+    try:
+        popup = WebDriverWait(driver, 2).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "div.ReactModal__Overlay"))
+        )
+        if popup:
+            logging.info("🚨 Pop-up detected! Attempting to close...")
+            driver.execute_script("arguments[0].remove();", popup)  # Remove the pop-up using JavaScript
+            logging.info("✅ Pop-up closed successfully.")
+    except Exception:
+        logging.info("No pop-ups detected. Proceeding with checkout.")
+
+
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
     logging.info("Adding item to cart at " + store["name"] + "...")
