@@ -84,6 +84,8 @@ def check_stock(store):
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
+            logging.info("Successfully obtained WebDriver");
+
             # Find all buttons matching the selector
             add_to_cart_buttons = driver.find_elements(By.CSS_SELECTOR, store["selectors"]["add_to_cart"])
 
@@ -110,6 +112,7 @@ def check_stock(store):
 
         except Exception as e:
             logging.error("Stock check failed for " + store["name"] + ": " + str(e))
+            logging.error("Full Exception Traceback:\n" + traceback.format_exc())
 
         time.sleep(3)
 
