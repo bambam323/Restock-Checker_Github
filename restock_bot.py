@@ -12,12 +12,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from concurrent.futures import ThreadPoolExecutor
-from selenium.webdriver.remote.remote_connection import RemoteConnection
 import threading
 
 # Disable warnings & increase connection pool size
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-RemoteConnection.set_timeout(120)
 
 # Load environment variables (Login & Payment Info)
 load_dotenv()
@@ -26,23 +24,22 @@ PASSWORD = os.getenv("PASSWORD")
 CARD_NUMBER = os.getenv("CARD_NUMBER")
 EXPIRY_DATE = os.getenv("EXPIRY_DATE")
 CVV = os.getenv("CVV")
-API_KEY = os.getenv("CAPTCHA_API_KEY")
 
-# Mask sensitive data for logging
-masked_email = EMAIL[:2] + "****@****.com"
+# Target Login URL
+LOGIN_URL = "https://www.target.com/login?client_id=ecom-web-1.0.0&ui_namespace=ui-default&back_button_action=browser&keep_me_signed_in=true&kmsi_default=false&actions=create_session_signin"
 
 # Load configuration file
 try:
     with open("config.yaml", "r") as file:
         config = yaml.safe_load(file)
 except Exception as e:
-    logging.error("Failed to load config.yaml: " + str(e))
+    logging.error("❌ Failed to load config.yaml: " + str(e))
     exit(1)
 
 # Configure logging
 logging.basicConfig(filename="restock_bot.log", level=logging.INFO, format="%(asctime)s - %(message)s")
 
-# Setup Chrome WebDriver (Fully Compatible with Older Versions)
+# Setup Chrome WebDriver (Compatible with Older Versions)
 options = webdriver.ChromeOptions()
 # options.add_argument("--headless")  # Disable this line if CAPTCHA is happening too often
 options.add_argument("--disable-gpu")
@@ -61,17 +58,59 @@ def create_driver():
     return driver
 
 
+def sign_in(driver):
+    """Logs into the Target account before checking stock."""
+    logging.info("🔑 Signing into Target account...")
+
+    try:
+        driver.get(LOGIN_URL)
+
+        # Step 1: Enter email
+        email_input = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input#username"))
+        )
+        email_input.send_keys(EMAIL)
+        logging.info("✅ Entered email")
+
+        # Step 2: Enter password
+        password_input = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "input#password"))
+        )
+        password_input.send_keys(PASSWORD)
+        logging.info("✅ Entered password")
+
+        # Step 3: Click "Sign in with password" (AFTER email & password are filled)
+        sign_in_button = WebDriverWait(driver, 5).until(
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-test='login-button']"))
+        )
+        sign_in_button.click()
+        logging.info("✅ Clicked 'Sign in with password' button")
+
+        # Ensure login was successful by checking if the account icon appears
+        WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "a[href='/account']"))
+        )
+        logging.info("✅ Successfully logged in!")
+
+    except Exception as e:
+        logging.error("❌ Failed to log in: " + str(e))
+        driver.quit()
+        exit(1)  # Stop the bot if login fails
+
+
+
 def check_stock(store):
-    """ Continuously checks if the product is in stock by checking if Add to Cart is enabled. """
+    """ Continuously checks if the product is in stock. """
     logging.info("🔍 Checking stock for " + store["name"] + "...")
 
     driver = create_driver()  # Start a separate WebDriver instance for each product
+    sign_in(driver)  # Ensure login before checking stock
 
     while True:
         try:
             driver.get(store["product_url"])
             logging.info("⏳ Waiting for page to fully load... (" + store["name"] + ")")
-            time.sleep(3)  # Ensure JavaScript elements load
+            time.sleep(3)
 
             logging.info("📌 Checking 'Add to Cart' button... (" + store["name"] + ")")
             add_to_cart_button = WebDriverWait(driver, 5).until(
@@ -81,7 +120,7 @@ def check_stock(store):
             if add_to_cart_button.is_enabled():
                 logging.info("🚀 " + store["name"] + " is IN STOCK! Verifying price...")
 
-                if check_price(store, driver):  # Ensure price is within budget
+                if check_price(store, driver):
                     logging.info("✅ Price verified! Proceeding to checkout... (" + store["name"] + ")")
                     checkout_thread = threading.Thread(target=add_to_cart, args=(store, driver))
                     checkout_thread.start()
@@ -97,13 +136,13 @@ def check_stock(store):
             logging.error("❌ Stock check failed for " + store["name"] + ": " + str(e))
             logging.error("📜 Full Exception Traceback:\n" + traceback.format_exc())
 
-        time.sleep(3)  # Prevent excessive requests
+        time.sleep(3)
 
 
 def check_price(store, driver):
     """Checks if the product price is within the allowed budget before purchase."""
     try:
-        price_element = WebDriverWait(driver, 1).until(
+        price_element = WebDriverWait(driver, 2).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["price"]))
         )
         price_text = price_element.text.replace("$", "").strip()
@@ -125,19 +164,19 @@ def add_to_cart(store, driver):
     logging.info("🛒 Adding item to cart at " + store["name"] + "...")
 
     try:
-        add_button = WebDriverWait(driver, 2).until(
+        add_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         )
 
         add_button.click()
         logging.info("✅ Item added to cart at " + store["name"] + "! Waiting for confirmation...")
 
-        modal = WebDriverWait(driver, 2).until(
+        modal = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "div[data-test='content-wrapper']"))
         )
         logging.info("🛍️ 'Added to Cart' modal detected!")
 
-        checkout_button = WebDriverWait(driver, 2).until(
+        checkout_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.LINK_TEXT, "View cart & check out"))
         )
         checkout_button.click()
@@ -154,17 +193,17 @@ def proceed_to_checkout(store, driver):
     logging.info("🚀 Proceeding to checkout at " + store["name"] + "...")
 
     try:
-        WebDriverWait(driver, 2).until(
+        WebDriverWait(driver, 3).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["checkout"]))
         ).click()
 
-        WebDriverWait(driver, 2).until(
+        WebDriverWait(driver, 3).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["payment"]["card_number"]))
         ).send_keys(CARD_NUMBER)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
         driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
 
-        WebDriverWait(driver, 2).until(
+        WebDriverWait(driver, 3).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
         ).click()
 
@@ -174,17 +213,19 @@ def proceed_to_checkout(store, driver):
 
 
 def main():
-    """Runs stock checks for all products simultaneously in separate browser instances."""
     logging.info("🚀 Starting Restock Bot...")
-
-    threads = []
-    for store in config["websites"]:
-        t = threading.Thread(target=check_stock, args=(store,))
-        t.start()
-        threads.append(t)
-
+    threads = [threading.Thread(target=check_stock, args=(store,)) for store in config["websites"]]
     for t in threads:
-        t.join()  # Let all stock checks run independently
+        t.start()
+    for t in threads:
+        t.join()
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    finally:
+        logging.info("🛑 Browser closed.")
 
 if __name__ == "__main__":
     try:
