@@ -68,73 +68,91 @@ driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options
 driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
 
 
+def check_price(store, retries=3):
+    """Checks if the product price is within the allowed budget before purchase."""
+    for attempt in range(retries):
+        try:
+            price_element = WebDriverWait(driver, 2).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["price"]))
+            )
+            price_text = price_element.text.replace("$", "").strip()
+            price = float(price_text)
+
+            if price > store["max_price"]:
+                logging.warning("{} is too expensive! Price: ${}, Max Allowed: ${}".format(
+                    store["name"], price, store["max_price"]
+                ))
+                return False  # ❌ Skip this item if it's over budget
+            else:
+                logging.info("{} is within budget! Price: ${}".format(store["name"], price))
+                return True  # ✅ Price is good
+
+        except Exception as e:
+            logging.error("Failed to check price for {}. Attempt {}/{}. Retrying...".format(
+                store["name"], attempt + 1, retries
+            ))
+            time.sleep(2)
+
+    logging.error("Final price check failed for {}. Skipping item.".format(store["name"]))
+    return False  # ❌ Move on if price checking fails
+
+
 def check_stock(store):
-    """ Continuously checks if the product is in stock while reducing detection risks. """
+    """ Continuously checks if the product is in stock and verifies price before proceeding. """
     logging.info("Checking stock for " + store["name"] + "...")
 
     while True:
         try:
             driver.get(store["product_url"])
             logging.info("Waiting for page to fully load...")
-            time.sleep(random.uniform(2, 5))  # 🚀 Randomized delay to prevent detection
+            time.sleep(random.uniform(2, 5))  # 🚀 Randomized delay
 
             logging.info("Checking 'Add to Cart' button...")
 
-            # Reduced timeout from 15s to 5s for faster failures
             WebDriverWait(driver, 5).until(
                 EC.presence_of_element_located((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
             )
 
-            logging.info("Successfully obtained WebDriver")
+            add_to_cart_button = driver.find_element(By.CSS_SELECTOR, store["selectors"]["add_to_cart"])
 
-            # Find all buttons matching the selector
-            add_to_cart_buttons = driver.find_elements(By.CSS_SELECTOR, store["selectors"]["add_to_cart"])
+            if add_to_cart_button.is_enabled():
+                logging.info("🚀 " + store["name"] + " is IN STOCK! Verifying price...")
 
-            if not add_to_cart_buttons:
-                logging.warning("No 'Add to Cart' button found for " + store["name"] + ". Retrying soon...")
+                if not check_price(store):  # ❌ If price is too high, skip purchase
+                    logging.info("Skipping purchase due to high price.")
+                    return
 
-                # 🚀 Automatically save and open the screenshot
-                screenshot_path = os.path.join(os.getcwd(), "debug_screenshot.png")
-                driver.save_screenshot(screenshot_path)
-                logging.warning("Screenshot saved at: " + screenshot_path)
+                logging.info("✅ Price verified! Proceeding to checkout...")
+                add_to_cart_button.click()
+                add_to_cart(store)
+                return  # Stop checking once item is in stock
 
-                # 🚀 Auto-open the screenshot
-                webbrowser.open(screenshot_path)
-
-            else:
-                for button in add_to_cart_buttons:
-                    if button.is_enabled():
-                        logging.info(store["name"] + " is IN STOCK! Proceeding to checkout...")
-                        button.click()
-                        add_to_cart(store)
-                        return  # Stop checking once item is in stock
-                
-                logging.info(store["name"] + " is OUT OF STOCK. Retrying soon...")
+            logging.info("⏳ " + store["name"] + " is still OUT OF STOCK. Refreshing soon...")
 
         except Exception as e:
-            logging.error("Stock check failed for " + store["name"] + ": " + str(e))
-            logging.error("Full Exception Traceback:\n" + traceback.format_exc())
+            logging.warning("⚠️ Button missing. Reloading page...")
+            driver.get(store["product_url"])
 
-        time.sleep(random.uniform(2, 4))  # 🚀 Randomized delay before retrying
+        time.sleep(random.uniform(2, 5))  # 🚀 Randomized delay before next check
 
 
 def add_to_cart(store):
     """ Adds item to cart and proceeds to checkout """
     logging.info("Adding item to cart at " + store["name"] + "...")
     try:
-        # Reduced timeout for faster response
         add_button = WebDriverWait(driver, 5).until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["add_to_cart"]))
         )
         add_button.click()
         logging.info("Item added to cart at " + store["name"] + "!")
+
         proceed_to_checkout(store)
     except Exception as e:
         logging.error("Failed to add item to cart at " + store["name"] + ": " + str(e))
 
 
 def proceed_to_checkout(store):
-    """Completes checkout process with automatic retry on failure (Optimized for Older Selenium)"""
+    """Completes checkout process with automatic retry on failure."""
     logging.info("Proceeding to checkout at " + store["name"] + "...")
 
     attempt = 0
@@ -157,14 +175,14 @@ def proceed_to_checkout(store):
             ).send_keys(CARD_NUMBER)
             driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["expiry"]).send_keys(EXPIRY_DATE)
             driver.find_element(By.CSS_SELECTOR, store["selectors"]["payment"]["cvv"]).send_keys(CVV)
-            logging.info("✅ Entered payment details for " + store["name"])
+            logging.info("✅ Entered payment details.")
 
             WebDriverWait(driver, 3).until(
                 EC.element_to_be_clickable((By.CSS_SELECTOR, store["selectors"]["payment"]["submit_button"]))
             ).click()
             logging.info("🎉 Order placed successfully for " + store["name"] + "!")
 
-            return  # Exit loop if checkout is successful
+            return
 
         except Exception as e:
             attempt += 1
@@ -177,13 +195,12 @@ def proceed_to_checkout(store):
 
 
 def main():
-    """Runs stock checks continuously with controlled delays."""
     logging.info("Starting Restock Bot...")
     while True:
         with ThreadPoolExecutor(max_workers=1) as executor:
             executor.map(check_stock, config["websites"])
         logging.info("Sleeping before rechecking stock...")
-        time.sleep(random.uniform(2, 5))  # 🚀 Randomized interval before looping
+        time.sleep(random.uniform(2, 5))
 
 
 if __name__ == "__main__":
