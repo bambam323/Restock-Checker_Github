@@ -94,6 +94,7 @@ def sign_in(driver):
 
     except Exception as e:
         logging.error("❌ Failed to log in: " + str(e))
+        logging.error("📜 Full Exception Traceback:\n" + traceback.format_exc())
         driver.quit()
         exit(1)  # Stop the bot if login fails
 
