@@ -53,6 +53,14 @@ options.add_experimental_option("useAutomationExtension", False)
 
 def create_driver():
     """Creates and returns a new WebDriver instance."""
+
+    # With v4.28.1 of Selenium, it will automatically populate the driver here for you
+    #driver = webdriver.Chrome()
+
+    # With older versions of Selenium and webdriver-manager, this is the oldest Chrome driver supported (not ideal)
+    #driver = webdriver.Chrome(ChromeDriverManager(version='114.0.5735.90').install())
+
+    # Uncomment the line below for older versions of Selenium in conjunction with webdriver-manager
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     return driver
@@ -65,30 +73,45 @@ def sign_in(driver):
     try:
         driver.get(LOGIN_URL)
 
-        # Step 1: Enter email
+        # Step 0: Click first "Sign In" button
+        account_sign_in = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#account-sign-in"))
+        )
+        account_sign_in.click()
+        logging.info("✅ Clicked first sign in button")
+
+        # Step 1: Click second "Sign In" button
+        account_sign_in2 = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "button[data-test='accountNav-signIn']"))
+        )
+        account_sign_in2.click()
+        logging.info("✅ Clicked second sign in button")
+
+
+        # Step 2: Enter email
         email_input = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "input#username"))
         )
         email_input.send_keys(EMAIL)
         logging.info("✅ Entered email")
 
-        # Step 2: Enter password
+        # Step 3: Enter password
         password_input = WebDriverWait(driver, 5).until(
             EC.presence_of_element_located((By.CSS_SELECTOR, "input#password"))
         )
         password_input.send_keys(PASSWORD)
         logging.info("✅ Entered password")
 
-        # Step 3: Click "Sign in with password" (AFTER email & password are filled)
+        # Step 4: Click "Sign in with password" (AFTER email & password are filled)
         sign_in_button = WebDriverWait(driver, 5).until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[data-test='login-button']"))
+            EC.element_to_be_clickable((By.CSS_SELECTOR, "button[id='login']"))
         )
         sign_in_button.click()
         logging.info("✅ Clicked 'Sign in with password' button")
 
         # Ensure login was successful by checking if the account icon appears
         WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "a[href='/account']"))
+            EC.presence_of_element_located((By.CSS_SELECTOR, "use[href='/icons/Account.svg#Account']"))
         )
         logging.info("✅ Successfully logged in!")
 
@@ -215,6 +238,8 @@ def proceed_to_checkout(store, driver):
 
 def main():
     logging.info("🚀 Starting Restock Bot...")
+    #check_stock(config["websites"][0])
+
     threads = [threading.Thread(target=check_stock, args=(store,)) for store in config["websites"]]
     for t in threads:
         t.start()
