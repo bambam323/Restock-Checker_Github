@@ -55,14 +55,14 @@ def create_driver():
     """Creates and returns a new WebDriver instance."""
 
     # With v4.28.1 of Selenium, it will automatically populate the driver here for you
-    driver = webdriver.Chrome()
+    #driver = webdriver.Chrome()
 
     # With older versions of Selenium and webdriver-manager, this is the oldest Chrome driver supported (not ideal)
     driver = webdriver.Chrome(ChromeDriverManager(version='114.0.5735.90').install())
 
     #Uncomment the line below for older versions of Selenium in conjunction with webdriver-manager
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
-    #driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     return driver
 
 
