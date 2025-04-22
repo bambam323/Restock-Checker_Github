@@ -19,11 +19,11 @@ websites:
       checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
 
-  - name: "Target - Pokemon Scarlet Violet S3.5 Booster Bundle Box"
-    product_url: "https://www.target.com/p/pokemon-scarlet-violet-s3-5-booster-bundle-box/-/A-88897904#lnk=sametab"
+  - name: "Target: Pokemon Trading Card Game: Scarlet & Violet-Prismatic Evolutions Booster Bundle"
+    product_url: "https://www.target.com/p/pok-233-mon-trading-card-game-scarlet-38-violet-prismatic-evolutions-booster-bundle/-/A-93954446#lnk=sametab"
     login_url: "https://www.target.com/account/sign-in"
     checkout_url: "https://www.target.com/co-review"
-    max_price: 28
+    max_price: 30
     quantity: 1
     selectors:
       login:
@@ -32,18 +32,18 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "#addToCartButtonOrTextIdFor88897904"
+      add_to_cart: "#addToCartButtonOrTextIdFor93954446"
       view_cart: "a[href='/cart']"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
       checkout_sign_in_button: "button#login"
       captcha: "iframe[src*='captcha']"
 
-  - name: "Target - Charizard ex Super-Premium Collection"
-    product_url: "https://www.target.com/p/pok-233-mon-trading-card-game-charizard-ex-super-premium-collection/-/A-91670547#lnk=sametab"
+  - name: "Pokémon Trading Card Game: Scarlet & Violet—Prismatic Evolutions Surprise Box"
+    product_url: "https://www.target.com/p/pok--233-mon-trading-card-game--scarlet---38--violet--8212-prismatic-evolutions-surprise-box--no-aasa/-/A-94336414"
     login_url: "https://www.target.com/account/sign-in"
     checkout_url: "https://www.target.com/co-review"
-    max_price: 58
+    max_price: 26 
     quantity: 1
     selectors:
       login:
@@ -52,7 +52,7 @@ websites:
         login_button: "button[data-test='login-button']"
       stock: "div.h-margin-t-default span span"
       price: "span[data-test='product-price']"
-      add_to_cart: "#addToCartButtonOrTextIdFor91670547"
+      add_to_cart: "#addToCartButtonOrTextIdFor94336414"
       view_cart: "a[href='/cart']"
       checkout: "button[data-test='checkoutButton']"
       checkout_password: "input[data-test='login-password']"
