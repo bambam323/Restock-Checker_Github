@@ -41,7 +41,7 @@ logging.basicConfig(filename="restock_bot.log", level=logging.INFO, format="%(as
 
 # Setup Chrome WebDriver (Compatible with Older Versions)
 options = webdriver.ChromeOptions()
-# options.add_argument("--headless")  # Disable this line if CAPTCHA is happening too often
+options.add_argument("--headless")  # Disable this line if CAPTCHA is happening too often
 options.add_argument("--disable-gpu")
 options.add_argument("--no-sandbox")
 options.add_argument("--disable-dev-shm-usage")
@@ -60,7 +60,7 @@ def create_driver():
     # With older versions of Selenium and webdriver-manager, this is the oldest Chrome driver supported (not ideal)
     #driver = webdriver.Chrome(ChromeDriverManager(version='114.0.5735.90').install())
 
-    Uncomment the line below for older versions of Selenium in conjunction with webdriver-manager
+    #Uncomment the line below for older versions of Selenium in conjunction with webdriver-manager
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     return driver
