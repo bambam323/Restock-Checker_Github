@@ -58,7 +58,7 @@ def create_driver():
     #driver = webdriver.Chrome()
 
     # With older versions of Selenium and webdriver-manager, this is the oldest Chrome driver supported (not ideal)
-    #driver = webdriver.Chrome(ChromeDriverManager(version='114.0.5735.90').install())
+    driver = webdriver.Chrome(ChromeDriverManager(version='114.0.5735.90').install())
 
     #Uncomment the line below for older versions of Selenium in conjunction with webdriver-manager
     driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
