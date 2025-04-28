@@ -1,18 +1,20 @@
-import os
-import time
 import logging
-import yaml
+import os
+import threading
+import time
 import traceback
-import requests
+
 import urllib3
-import webbrowser
+import yaml
 from dotenv import load_dotenv
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from concurrent.futures import ThreadPoolExecutor
-import threading
+from selenium.webdriver.support.ui import WebDriverWait
+from playsound import playsound
+
+import undetected_chromedriver as uc
+from webdriver_manager.chrome import ChromeDriverManager
 
 # Disable warnings & increase connection pool size
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
@@ -52,18 +54,66 @@ options.add_experimental_option("useAutomationExtension", False)
 
 
 def create_driver():
-    """Creates and returns a new WebDriver instance."""
+    options = uc.ChromeOptions()
+    options.add_argument("--start-maximized")
+    options.add_argument("--disable-blink-features=AutomationControlled")
 
-    # With v4.28.1 of Selenium, it will automatically populate the driver here for you
-    #driver = webdriver.Chrome()
+    driver = uc.Chrome(version_main=135, options=options)
 
+    # USE THE FOLLOWING LINES FOR OLDER VERSIONS OF SELENIUM ##############
     # With older versions of Selenium and webdriver-manager, this is the oldest Chrome driver supported (not ideal)
-    driver = webdriver.Chrome(ChromeDriverManager(version='114.0.5735.90').install())
+    # driver = uc.Chrome(options=options)
+    # driver = webdriver.Chrome(ChromeDriverManager(version='114.0.5735.90').install())
+    # driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+    ####################################################################
 
-    #Uncomment the line below for older versions of Selenium in conjunction with webdriver-manager
-    driver = webdriver.Chrome(executable_path="/usr/local/bin/chromedriver", options=options)
-    driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+    # This lines is needed to bypasss the Passkeys Chrome popup
+    driver.execute_cdp_cmd(
+        'Page.addScriptToEvaluateOnNewDocument',
+        {
+            'source': """
+            if (navigator.credentials) {
+                navigator.credentials.get = async () => { throw new Error('No credentials available'); };
+         }
+            """
+        }
+    )
+
     return driver
+
+
+def close_browser_popup(driver):
+    try:
+        WebDriverWait(driver, 10).until(EC.alert_is_present())
+        alert = driver.switch_to.alert
+        alert.dismiss()
+        logging.info("Alert accepted.")
+    except Exception as e:
+        logging.error("No alert present. " + str(e))
+
+
+def close_html_popup(driver):
+    try:
+        # Wait for the close button to be clickable
+        close_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[contains(text(), 'Close') or @aria-label='Close']"))
+        )
+        close_button.click()
+        logging.info("HTML popup closed successfully.")
+    except Exception as e:
+        logging.error("No HTML popup found or could not close it: " + str(e))
+
+
+def remove_blocking_modals(driver):
+    try:
+        driver.execute_script("""
+            let modals = document.querySelectorAll('[aria-hidden="false"], .modal, .overlay, [role="dialog"]');
+            modals.forEach(el => el.remove());
+            console.log("Removed potential blocking modals");
+        """)
+        logging.info("Removed potential blocking modals");
+    except Exception as e:
+        logging.error("Error while removing modals:", e)
 
 
 def sign_in(driver):
@@ -94,6 +144,14 @@ def sign_in(driver):
         )
         email_input.send_keys(EMAIL)
         logging.info("✅ Entered email")
+
+        # Step 2.5: Press Continue
+        continue_button = WebDriverWait(driver, 5).until(
+            EC.presence_of_element_located((By.CSS_SELECTOR, "#login"))
+        )
+        continue_button.click()
+        driver.execute_script("arguments[0].click();", continue_button)
+        logging.info("✅ Pressed Continue")
 
         # Step 3: Enter password
         password_input = WebDriverWait(driver, 5).until(
@@ -142,6 +200,7 @@ def check_stock(store):
             )
 
             if add_to_cart_button.is_enabled():
+                playsound('alert.mp3')
                 logging.info("🚀 " + store["name"] + " is IN STOCK! Verifying price...")
 
                 if check_price(store, driver):
@@ -246,12 +305,6 @@ def main():
     for t in threads:
         t.join()
 
-
-if __name__ == "__main__":
-    try:
-        main()
-    finally:
-        logging.info("🛑 Browser closed.")
 
 if __name__ == "__main__":
     try:
